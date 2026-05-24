@@ -1,0 +1,6 @@
+interface:
+  display_name: "Discuz X5 Development"
+  short_description: "Discuz X5 plugin/template engineering guardrails"
+  default_prompt: "Use $discuz-x5 to implement or review a Discuz X5 plugin/template change."
+policy:
+  allow_implicit_invocation: true

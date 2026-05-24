@@ -1,0 +1,4 @@
+interface:
+  display_name: "Experience Triage"
+  short_description: "Route agent learnings to the right layer."
+  default_prompt: "Use $experience-triage to decide where this task learning should be preserved."

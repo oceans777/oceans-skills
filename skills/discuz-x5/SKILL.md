@@ -96,6 +96,16 @@ Before implementing or approving a Discuz X5 plugin/template change:
 
 Match verification to the change. Minimum expectations:
 
+- For projects that use the oceans777 agent workflow, the bundled template
+  `assets/agent-verify.template.ps1` can be copied to
+  `scripts/agent-verify.ps1` as a Discuz X5 project-level verification gate.
+  It enforces `.githooks`, `dev` / `codex/<task-name>` branch policy, risky
+  staged file checks, generated runtime file boundaries, PHP lint, JavaScript
+  syntax checks, related JS behavior tests, staged PHP tests, and commit
+  message format.
+- Copy `assets/agent-status.template.ps1` to `scripts/agent-status.ps1` when
+  using that verification gate. It reports working tree state and can detect or
+  restore whitespace-only drift referenced by `agent-verify.ps1`.
 - PHP changes: `php -l` on changed PHP files.
 - Plugin behavior: run existing focused tests.
 - Template/CSS/JS: run available lint/build/test or browser QA with screenshots.

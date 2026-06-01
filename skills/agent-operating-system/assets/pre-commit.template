@@ -1,7 +1,13 @@
 #!/bin/sh
 set -e
 
-if command -v pwsh >/dev/null 2>&1; then
+if [ -x scripts/agent-standards-hook.sh ]; then
+  scripts/agent-standards-hook.sh pre-commit
+fi
+
+if [ -x scripts/agent-verify.sh ]; then
+  scripts/agent-verify.sh
+elif command -v pwsh >/dev/null 2>&1; then
   pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/agent-verify.ps1
 else
   powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/agent-verify.ps1

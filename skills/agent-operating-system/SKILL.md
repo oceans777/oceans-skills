@@ -1,6 +1,6 @@
 ---
 name: agent-operating-system
-description: 'Use when a user wants to audit, bootstrap, migrate, or operate a project using an eight-layer agent workflow with AGENTS.md, local rules, skills, scripts, hooks, worktrees, subagents, verification, commits, merges, and post-task learning capture.'
+description: 'Use when a user wants to audit, bootstrap, migrate, dedupe, or operate a project using an eight-layer agent workflow with AGENTS.md, CLAUDE.md, local rules, skills, scripts, Git hooks, first-commit standards guards, worktrees, subagents, verification, commits, merges, and post-task learning capture.'
 ---
 
 # Agent Operating System
@@ -15,6 +15,9 @@ Use this skill when the user asks to:
 
 - Standardize agent workflow across projects.
 - Slim or migrate a large `AGENTS.md` / `CLAUDE.md`.
+- Install a local or global Git hook that checks agent docs and commit messages.
+- Initialize missing `AGENTS.md` / `CLAUDE.md` from reusable templates without overwriting existing files.
+- Dedupe global and project-level agent rules to reduce repeated context.
 - Initialize missing agent workflow files in a repository.
 - Run many parallel feature tasks without branch pollution.
 - Use worktrees and subagents safely.
@@ -31,6 +34,8 @@ Choose exactly one primary mode from the user's request:
 | `audit` | "review our AGENTS", "how should this be layered" | Layer report, no edits unless asked |
 | `bootstrap` | "initialize this project", "create the missing files" | Create missing scaffold only |
 | `migrate` | "split this AGENTS", "lower the context load" | Move content into correct layers |
+| `install-global-guard` | "make every git commit check AGENTS", "install global hooks" | Install non-overwriting global Git hooks |
+| `dedupe` | "global and project AGENTS duplicate", "reduce token usage" | Duplicate report, no automatic deletion |
 | `start-task` | "start feature X", "new task branch" | Isolated worktree + branch plan |
 | `parallel-work` | "six features at once", "use subagents" | Worktree/subagent assignment matrix |
 | `finish-task` | "finish/merge/ship this task branch" | Verify, commit, push, merge, post-task triage |
@@ -72,6 +77,10 @@ Exact suggested file:
 
 When the user asks to create files, prefer the bundled script:
 
+```sh
+sh <skill-dir>/scripts/bootstrap-agent-os.sh --project-root <repo>
+```
+
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File <skill-dir>/scripts/bootstrap-agent-os.ps1 -ProjectRoot <repo>
 ```
@@ -81,15 +90,80 @@ The script creates missing files only. It must not overwrite existing project fi
 Created scaffold:
 
 - `AGENTS.md`
+- Optional `CLAUDE.md` with `--require-claude` / `-RequireClaude`
+- `.oceans/agent-standards.conf`
+- `.oceans/templates/AGENTS.template.md`
+- `.oceans/templates/CLAUDE.template.md`
 - `docs/agent/branch-workflow.md`
 - `docs/agent/project-reference.md`
+- `scripts/agent-bootstrap.ps1`
 - `scripts/agent-verify.ps1`
+- `scripts/agent-verify.sh`
+- `scripts/agent-standards-hook.sh`
+- `scripts/dedupe-agent-docs.sh`
 - `.githooks/pre-commit`
 - `.githooks/commit-msg`
-- `.gitattributes` hook line-ending rule
+- `.gitattributes` hook and shell-script line-ending rules
 - `.gitignore` entry for `.worktrees/`
 
 Templates live in `assets/`. Read or copy them only when bootstrapping or explaining the scaffold.
+
+## Agent Standards Guard
+
+Use the guard when the user wants agent standards to be checked automatically
+during normal Git use.
+
+For global hooks across repositories:
+
+```sh
+sh <skill-dir>/scripts/install-global-hooks.sh
+```
+
+If `git config --global core.hooksPath` already exists, do not overwrite it
+silently. Use `--chain-existing` only when the user wants oceans777 checks to
+run before the existing global hooks, or `--force` when they explicitly accept
+replacement.
+
+The global guard calls `scripts/agent-standards-hook.sh`. On the first guarded
+commit per repository it:
+
+1. Creates missing `AGENTS.md` from `assets/AGENTS.template.md`.
+2. Creates missing `CLAUDE.md` only when `.oceans/agent-standards.conf` sets
+   `require_claude_md=1`.
+3. Never overwrites existing `AGENTS.md` or `CLAUDE.md`.
+4. Opens existing or newly created docs with Cursor, VS Code, macOS `open`, or
+   `xdg-open` when available.
+5. Blocks once so the user reviews and stages required docs.
+6. Stores the local reviewed marker inside Git's private state via
+   `git rev-parse --git-path oceans-agent-standards-state`, not in the working
+   tree.
+
+Hook checks must stay deterministic. Do not call an LLM from a Git hook. For
+AI-assisted tailoring, inspect the repository and edit `AGENTS.md` /
+`CLAUDE.md` explicitly in response to the user request.
+
+`install-global-hooks.sh` installs a self-contained copy of the guard and its
+templates under the user's Git hook config directory, so commits do not depend
+on the current clone path remaining unchanged.
+
+## Dedupe Flow
+
+Use dedupe when project startup docs repeat global or template rules and the
+user wants to reduce duplicated context:
+
+```sh
+sh <skill-dir>/scripts/dedupe-agent-docs.sh --project <repo>
+```
+
+The script reports exact duplicate bullet rules only. It does not edit files.
+Treat output as a review queue:
+
+- Remove project-level duplicates only when they add no path, command, scope,
+  exception, or stricter behavior.
+- Keep project rules that specialize global rules.
+- Keep repository-specific commands and constraints in the project startup doc
+  or path-scoped local docs instead of duplicating broad global rules.
+- Use AI judgment only through an explicit review task, not from a hook.
 
 ## Worktree And Subagent Flow
 

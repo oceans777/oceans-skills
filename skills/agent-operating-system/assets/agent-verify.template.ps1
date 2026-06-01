@@ -1,5 +1,6 @@
 param(
     [switch]$AllowBaselineBranch,
+    [switch]$AllowDevBranch,
     [switch]$AllowRiskyFiles,
     [string]$CommitMessageFile,
     [string]$BaselineBranch = '{{BASE_BRANCH}}',
@@ -22,6 +23,55 @@ function Info($message) {
     Write-Host "[INFO] $message" -ForegroundColor Cyan
 }
 
+function Get-AgentConfigValue($path, $key, $defaultValue) {
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+        return $defaultValue
+    }
+
+    $lines = Get-Content -LiteralPath $path -Encoding UTF8
+    foreach ($line in $lines) {
+        $trimmed = $line.Trim()
+        if ($trimmed -eq '' -or $trimmed.StartsWith('#') -or $trimmed -notmatch '=') {
+            continue
+        }
+
+        $parts = $trimmed -split '=', 2
+        if ($parts[0].Trim() -eq $key) {
+            return $parts[1].Trim()
+        }
+    }
+
+    return $defaultValue
+}
+
+function Test-Enabled($value) {
+    return ($value -in @('1', 'true', 'yes', 'on'))
+}
+
+function Test-TrackedOrStaged($path) {
+    & git ls-files --error-unmatch $path *> $null
+    if ($LASTEXITCODE -eq 0) {
+        return $true
+    }
+
+    $staged = GitLines @('diff', '--cached', '--name-only', '--', $path)
+    return ($staged.Count -gt 0)
+}
+
+function Test-AgentDoc($path, $required) {
+    if (-not (Test-Enabled $required)) {
+        return
+    }
+
+    if (-not (Test-Path -LiteralPath (Join-Path $repoRoot $path) -PathType Leaf)) {
+        Fail "$path is missing. Run agent-operating-system bootstrap, or install the agent standards hook."
+    } elseif (-not (Test-TrackedOrStaged $path)) {
+        Fail "$path exists but is not tracked or staged."
+    } else {
+        Pass "$path exists"
+    }
+}
+
 function GitLines($arguments) {
     $output = & git @arguments 2>&1
     if ($LASTEXITCODE -ne 0) {
@@ -36,6 +86,13 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($repoRoot)) {
 }
 Set-Location $repoRoot
 
+$configFile = Join-Path $repoRoot '.oceans/agent-standards.conf'
+$BaselineBranch = Get-AgentConfigValue $configFile 'baseline_branch' $BaselineBranch
+$TaskPrefix = Get-AgentConfigValue $configFile 'task_prefix' $TaskPrefix
+$requireAgents = Get-AgentConfigValue $configFile 'require_agents_md' '1'
+$requireClaude = Get-AgentConfigValue $configFile 'require_claude_md' '0'
+$commitMessagePolicy = Get-AgentConfigValue $configFile 'commit_message' 'conventional'
+
 $gitDir = (& git rev-parse --git-dir).Trim()
 $isMergeInProgress = Test-Path -LiteralPath (Join-Path $gitDir 'MERGE_HEAD')
 
@@ -44,8 +101,8 @@ Info "Repository: $repoRoot"
 $branch = (& git branch --show-current).Trim()
 if ([string]::IsNullOrWhiteSpace($branch)) {
     Fail 'Detached HEAD is not allowed for normal agent work.'
-} elseif ($branch -eq $BaselineBranch -and -not ($AllowBaselineBranch -or $isMergeInProgress)) {
-    Fail "Work is on $BaselineBranch. Use a $TaskPrefix/<task-name> branch or pass -AllowBaselineBranch for an intentional merge."
+} elseif ($branch -eq $BaselineBranch -and -not ($AllowBaselineBranch -or $AllowDevBranch -or $isMergeInProgress)) {
+    Fail "Work is on $BaselineBranch. Use a $TaskPrefix/<task-name> branch or pass -AllowDevBranch for an intentional merge."
 } elseif ($branch -ne $BaselineBranch -and $branch -notlike "$TaskPrefix/*") {
     Fail "Unexpected branch '$branch'. Expected $TaskPrefix/<task-name> or $BaselineBranch."
 } else {
@@ -95,6 +152,9 @@ if ($stagedFiles.Count -gt 0 -and -not $AllowRiskyFiles) {
     }
 }
 
+Test-AgentDoc 'AGENTS.md' $requireAgents
+Test-AgentDoc 'CLAUDE.md' $requireClaude
+
 $phpFiles = @()
 if ($stagedFiles.Count -gt 0) {
     $phpFiles = $stagedFiles | Where-Object {
@@ -121,13 +181,13 @@ if ($phpFiles.Count -gt 0) {
     Info 'No staged PHP files to lint.'
 }
 
-if ($CommitMessageFile) {
+if ($CommitMessageFile -and $commitMessagePolicy -notin @('off', 'none')) {
     if (-not (Test-Path -LiteralPath $CommitMessageFile -PathType Leaf)) {
         Fail "Commit message file not found: $CommitMessageFile"
     } else {
         $firstLine = (Get-Content -LiteralPath $CommitMessageFile -Encoding UTF8 | Select-Object -First 1)
-        if ($firstLine -notmatch '^(feat|fix|docs|style|refactor|perf|test|chore): .+') {
-            Fail "Commit message must use '<type>: <title>'. Found: $firstLine"
+        if ($firstLine -notmatch '^(feat|fix|docs|style|refactor|perf|test|chore)(\([A-Za-z0-9._-]+\))?: .+') {
+            Fail "Commit message must use '<type>: <title>' or '<type>(scope): <title>'. Found: $firstLine"
         } else {
             Pass 'Commit message format'
         }

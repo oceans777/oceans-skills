@@ -4,7 +4,8 @@ param(
     [string]$TaskPrefix = 'codex',
     [string]$WorktreeDir = '.worktrees',
     [switch]$EnableHooks,
-    [switch]$UseLocalWorktrees
+    [switch]$UseLocalWorktrees,
+    [switch]$RequireClaude
 )
 
 $ErrorActionPreference = 'Stop'
@@ -31,10 +32,12 @@ function Ensure-Directory($path) {
 }
 
 function Expand-Template($content) {
+    $requireClaudeValue = if ($RequireClaude) { '1' } else { '0' }
     return $content.
         Replace('{{BASE_BRANCH}}', $BaselineBranch).
         Replace('{{TASK_PREFIX}}', $TaskPrefix).
-        Replace('{{WORKTREE_DIR}}', $WorktreeDir)
+        Replace('{{WORKTREE_DIR}}', $WorktreeDir).
+        Replace('{{REQUIRE_CLAUDE_MD}}', $requireClaudeValue)
 }
 
 function Write-Utf8NoBom($path, $content) {
@@ -60,10 +63,30 @@ function Copy-TemplateIfMissing($templateName, $targetPath) {
 
     $content = Get-Content -LiteralPath $templatePath -Raw -Encoding UTF8
     $content = Expand-Template $content
-    if (($targetPath -replace '\\', '/') -match '/\.githooks/') {
+    $normalizedTargetPath = $targetPath -replace '\\', '/'
+    if ($normalizedTargetPath -match '/\.githooks/' -or $normalizedTargetPath -match '/scripts/[^/]+\.sh$') {
         $content = ($content -replace "`r`n", "`n") -replace "`r", "`n"
     }
     Write-Utf8NoBom $targetPath $content
+    Created $targetPath
+}
+
+function Copy-FileIfMissing($sourcePath, $targetPath) {
+    if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
+        throw "Source file missing: $sourcePath"
+    }
+
+    if (Test-Path -LiteralPath $targetPath) {
+        Exists $targetPath
+        return
+    }
+
+    $parent = Split-Path -Parent $targetPath
+    if ($parent) {
+        Ensure-Directory $parent
+    }
+
+    Copy-Item -LiteralPath $sourcePath -Destination $targetPath
     Created $targetPath
 }
 
@@ -103,19 +126,40 @@ Ensure-Directory (Join-Path $repoRoot 'docs')
 Ensure-Directory (Join-Path $repoRoot 'docs/agent')
 Ensure-Directory (Join-Path $repoRoot 'scripts')
 Ensure-Directory (Join-Path $repoRoot '.githooks')
+Ensure-Directory (Join-Path $repoRoot '.oceans')
+Ensure-Directory (Join-Path $repoRoot '.oceans/templates')
 
 Copy-TemplateIfMissing 'AGENTS.template.md' (Join-Path $repoRoot 'AGENTS.md')
+if ($RequireClaude) {
+    Copy-TemplateIfMissing 'CLAUDE.template.md' (Join-Path $repoRoot 'CLAUDE.md')
+}
+Copy-TemplateIfMissing 'AGENTS.template.md' (Join-Path $repoRoot '.oceans/templates/AGENTS.template.md')
+Copy-TemplateIfMissing 'CLAUDE.template.md' (Join-Path $repoRoot '.oceans/templates/CLAUDE.template.md')
 Copy-TemplateIfMissing 'branch-workflow.template.md' (Join-Path $repoRoot 'docs/agent/branch-workflow.md')
 Copy-TemplateIfMissing 'project-reference.template.md' (Join-Path $repoRoot 'docs/agent/project-reference.md')
+Copy-TemplateIfMissing 'agent-bootstrap.template.ps1' (Join-Path $repoRoot 'scripts/agent-bootstrap.ps1')
 Copy-TemplateIfMissing 'agent-verify.template.ps1' (Join-Path $repoRoot 'scripts/agent-verify.ps1')
+Copy-TemplateIfMissing 'agent-verify.template.sh' (Join-Path $repoRoot 'scripts/agent-verify.sh')
+Copy-FileIfMissing (Join-Path $scriptDir 'agent-standards-hook.sh') (Join-Path $repoRoot 'scripts/agent-standards-hook.sh')
+Copy-FileIfMissing (Join-Path $scriptDir 'dedupe-agent-docs.sh') (Join-Path $repoRoot 'scripts/dedupe-agent-docs.sh')
+Copy-TemplateIfMissing 'agent-standards.conf.template' (Join-Path $repoRoot '.oceans/agent-standards.conf')
 Copy-TemplateIfMissing 'pre-commit.template' (Join-Path $repoRoot '.githooks/pre-commit')
 Copy-TemplateIfMissing 'commit-msg.template' (Join-Path $repoRoot '.githooks/commit-msg')
 
 Append-LineIfMissing (Join-Path $repoRoot '.gitattributes') '.githooks/* text eol=lf'
+Append-LineIfMissing (Join-Path $repoRoot '.gitattributes') 'scripts/*.sh text eol=lf'
 
 if ($UseLocalWorktrees) {
     Append-LineIfMissing (Join-Path $repoRoot '.gitignore') "$WorktreeDir/"
     Ensure-Directory (Join-Path $repoRoot $WorktreeDir)
+}
+
+if ($IsLinux -or $IsMacOS) {
+    & chmod +x (Join-Path $repoRoot 'scripts/agent-verify.sh') 2>$null
+    & chmod +x (Join-Path $repoRoot 'scripts/agent-standards-hook.sh') 2>$null
+    & chmod +x (Join-Path $repoRoot 'scripts/dedupe-agent-docs.sh') 2>$null
+    & chmod +x (Join-Path $repoRoot '.githooks/pre-commit') 2>$null
+    & chmod +x (Join-Path $repoRoot '.githooks/commit-msg') 2>$null
 }
 
 if ($EnableHooks) {

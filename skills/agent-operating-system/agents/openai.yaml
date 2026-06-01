@@ -1,4 +1,4 @@
 interface:
   display_name: "Agent Operating System"
-  short_description: "Install and operate an eight-layer agent workflow."
-  default_prompt: "Use $agent-operating-system to audit, bootstrap, or operate this project with an eight-layer agent workflow."
+  short_description: "Install agent docs, hooks, and workflow guardrails."
+  default_prompt: "Use $agent-operating-system to audit, bootstrap, dedupe, or guard this project with AGENTS.md, hooks, and an eight-layer agent workflow."

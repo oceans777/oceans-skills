@@ -1,34 +1,72 @@
 # AGENTS.md
 
-## Startup Rules
+## 1. 常驻原则
 
-- This file is the project startup layer. Keep it thin: hard rules, project map, and pointers to deeper layers.
-- Direct user instructions override this file.
-- Protect existing user work. Do not overwrite, delete, or revert unrelated changes.
-- Work on one change intent at a time.
+- 代码、架构、目录、契约或行为调整时，必须从源头解决问题,禁止最小改动,不能留下技术债,要最佳实践。
+- 每次助手回复必须以 `yes长官` 作为最后一行结束。
 
-## Project Map
+## 2. 项目地图
 
-- Baseline branch: `{{BASE_BRANCH}}`
-- Agent reference docs: `docs/agent/`
-- Verification script: `scripts/agent-verify.ps1`
-- Hooks directory: `.githooks/`
+- 当前仓库路径：`<填写当前仓库路径>`
 
-## Layering Rules
+## 3. 安全底线
 
-- Global hard rules stay here.
-- Path-specific rules belong near the path or in `docs/agent/`.
-- Multi-step judgment workflows belong in skills.
-- Mechanical checks belong in scripts.
-- Mandatory checks belong in hooks.
-- Long references belong in `docs/agent/`.
+- 不提交 `.env`、私钥、凭证、日志中的敏感信息或本地机器专属配置。
+- 不安装来源不明的依赖；确需新增依赖时，应说明用途、维护状态和替代方案。
+- 不把临时调试输出、测试账号、一次性脚本或本地路径泄露到生产代码中。
+- 不用不可信输入拼接 Shell 命令、SQL 或文件路径；涉及数据库访问时使用参数化查询或既有安全 API。
 
-## Git Workflow
+## 4. 工作边界
 
-- Start independent work from latest `{{BASE_BRANCH}}`.
-- Use `{{TASK_PREFIX}}/<task-name>` task branches.
-- Prefer one task branch per worktree for parallel work.
-- Verify before commit and before merge.
-- Stage only files owned by the current task.
+- 开始修改前，先确认当前任务的单一变更意图，并检查工作区状态。
+- 除只读分析或用户明确说明不使用 worktree 外，所有文件修改、暂存、提交和推送都必须在 linked git worktree 中进行；主仓库 checkout 只用于查看、协调和创建 worktree。
+- 如果当前不在 linked git worktree，必须先通过 `git worktree list` 判断现有 worktree，并为当前任务创建或切换到独立 worktree；无法创建或切换时，停止并说明阻塞原因，不得在主仓库 checkout 中直接改文件。
+- 已存在的未提交或未跟踪文件默认视为用户工作成果，不得擅自删除、覆盖或回滚。
+- 只修改与任务目标直接相关的文件；发现无关问题时，记录并说明，不顺手扩散重构。
+- 如果当前任务必须触碰用户已有改动，应先理解这些改动并在其基础上继续，不能简单覆盖。
+- 不使用 `git reset --hard`、强制推送、批量删除、数据库破坏性操作等高风险命令，除非用户明确要求并确认范围。
+- 发布、部署、`ship`、`land-and-deploy` 类动作必须由用户明确授权，不能仅凭任务完成自动执行。
 
-See `docs/agent/branch-workflow.md`.
+## 5. 执行方式
+
+- 从能够满足质量和风险控制的最轻流程开始；只有范围、风险或不确定性升高时，才升级到完整方案、计划、评审或多 skill 链路。
+- 只读任务可直接分析并回复，不启动完整 brainstorming、writing-plans 或 worktree 流程。
+- Bug 排查先复现问题、定位根因、对比现有可用模式，再实施修复；禁止在根因不明时堆叠试探性修改。
+- 轻量任务在满足 worktree 边界后，可直接实现、定向验证、原子提交；中大型任务应先给出简短方案或任务清单。
+- 并行或子代理只用于用户明确要求并行，或任务可拆成互不影响、边界清晰、可独立验证的子任务；每个会修改文件的子任务必须使用独立分支和独立 linked worktree。
+- 涉及同一文件、共享契约、根配置、CI、锁文件、入口文件或根因未明的调试任务时，默认串行处理。
+
+## 6. 分层使用规则
+
+- 高频、全局、每次会话都必须知道的规则，才写入本文件。
+- 只对某个目录、文件类型、插件或模块生效的规则，优先放到对应目录的局部规则文件。
+- 多步流程、专题 checklist、分支判断和复用工作流，优先沉淀为 skill 或 `docs/agent/` 流程文档。
+- 能用命令确定检查结果的内容，优先放到 `scripts/`；本地钩子启用、修复和初始化入口是 `scripts/agent-bootstrap.ps1`，提交前基础门禁与专项验证入口是 `scripts/agent-verify.ps1`。
+- 必须每次执行、不能依赖模型自觉的约束，优先放到 `.githooks/`；hooks 的安装与修复由 `scripts/agent-bootstrap.ps1` 负责，实际校验逻辑由 `scripts/agent-verify.ps1` 承接。
+- 长链接、官方资料、目录说明等参考资料，不常驻本文件，放到 `docs/agent/`。
+- 一次性、过度私人、尚未复现的经验，默认不沉淀；等再次出现再用 `experience-triage` 判断归属。
+
+## 7. 前端设计协作规则
+
+- 涉及前端页面、组件视觉、布局、交互、配色、字体、动效、响应式或用户体验调整时，如可用，优先使用 `ui-ux-pro-max` 明确页面目标、用户场景、信息层级、设计系统、可访问性与响应式约束。
+- 若任务产物匹配 open-design 专项 skill，且对应 skill 可用，应在方案或实现阶段按最窄场景调用对应 skill：通用单页原型使用 `web-prototype`，SaaS/营销页使用 `saas-landing`，后台/数据页使用 `dashboard`，移动端原型使用 `mobile-app`，演示文稿使用 `guizang-ppt` 或 `html-ppt`，设计 brief 不清晰时使用 `design-brief` 先固化 `DESIGN.md`。
+- open-design skill 产出的单文件 HTML、原型结构或设计系统只能作为设计与实现参考。
+- 完成前端设计方案或实现后，如可用，再使用 `frontend-design` 从视觉质量和生产级体验角度复核，重点检查模板化 AI 风格、视觉层级、间距、字体、色彩、交互状态与移动端表现。
+- 多个前端/design skill 的结论冲突时，以用户明确要求、项目现有设计体系、可维护性和可验证性优先。
+- 单个文案、颜色微调、小范围样式 bug 等轻量前端任务，可不启动完整多 skill 流程，但仍应做定向自检。
+
+## 8. Git 与发布边界
+
+- `{{BASE_BRANCH}}` 是默认基线；除只读任务外，改动必须在 `{{TASK_PREFIX}}/<任务名>` linked worktree 分支中完成，除非用户明确说明不使用 worktree。
+- 提交必须原子化，提交说明使用中文并带类型前缀，例如 `docs: 更新 agent 规则索引`。
+- 每次修复或改动完成并通过验证后，必须自动安全提交、合并并推送到本地 `{{BASE_BRANCH}}` 与远程 `{{BASE_BRANCH}}`；不得夹带无关提交、覆盖未提交改动或使用强制推送。
+- 发布、部署、`ship`、`land-and-deploy` 类动作仍必须由用户明确授权，不能仅凭任务完成自动执行。
+- 分支创建、合并、同步和异常处理细节见 `docs/agent/branch-workflow.md`。
+
+## 9. 验证入口
+
+- 声称完成、提交、推送或同步前，必须运行与改动匹配的验证。
+- 提交前默认运行 `scripts/agent-verify.ps1` 完成基础门禁；本地 hooks 未启用或需要修复时，运行 `scripts/agent-bootstrap.ps1`。
+- 专项验证使用 `scripts/agent-verify.ps1`，自动同步到 `{{BASE_BRANCH}}` 时使用 `-AllowDevBranch`。
+- 代码、模板、样式、脚本、文档等专项验证细节由脚本、相关 skill 或 `docs/agent/` 流程文档承接。
+- 无法验证时必须说明原因和剩余风险，不能虚构测试、截图或命令输出。

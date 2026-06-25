@@ -101,11 +101,15 @@ Created scaffold:
 - `.oceans/templates/CLAUDE.template.md`
 - `docs/agent/branch-workflow.md`
 - `docs/agent/project-reference.md`
+- `scripts/dedupe-agent-docs.sh`
+
+When the project has no existing agent hook or verification entrypoint, the
+bootstrap script also creates the bundled defaults:
+
 - `scripts/agent-bootstrap.ps1`
 - `scripts/agent-verify.ps1`
 - `scripts/agent-verify.sh`
 - `scripts/agent-standards-hook.sh`
-- `scripts/dedupe-agent-docs.sh`
 - `.githooks/pre-commit`
 - `.githooks/commit-msg`
 - `.gitattributes` hook and shell-script line-ending rules

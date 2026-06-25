@@ -37,6 +37,10 @@ git push -u origin {{TASK_PREFIX}}/<task-name>
 git switch {{BASE_BRANCH}}
 git pull --ff-only origin {{BASE_BRANCH}}
 git merge --no-ff -m "chore: merge <task-name>" {{TASK_PREFIX}}/<task-name>
-# Push the baseline branch only when project policy authorizes it.
-git push origin {{BASE_BRANCH}}
 ```
+
+Push `{{BASE_BRANCH}}` only when project policy or the user explicitly
+authorizes baseline pushes:
+
+For Git remotes, the authorized baseline push is usually
+`git push origin {{BASE_BRANCH}}`.

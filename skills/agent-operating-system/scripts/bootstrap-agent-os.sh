@@ -95,6 +95,43 @@ fi
 cd "$repo_root"
 info "Bootstrapping agent OS in $repo_root"
 
+existing_agent_entries=
+add_existing_entry() {
+  entry=$1
+  if [ -z "$existing_agent_entries" ]; then
+    existing_agent_entries=$entry
+  else
+    existing_agent_entries="$existing_agent_entries, $entry"
+  fi
+}
+
+configured_hooks_path=$(git config --get core.hooksPath 2>/dev/null || true)
+if [ -n "$configured_hooks_path" ] && [ "$configured_hooks_path" != ".githooks" ]; then
+  add_existing_entry "core.hooksPath=$configured_hooks_path"
+fi
+if [ -d common/git-hooks ]; then
+  add_existing_entry common/git-hooks
+fi
+if [ -f scripts/agent-verify.sh ]; then
+  add_existing_entry scripts/agent-verify.sh
+fi
+if [ -f scripts/agent-verify.ps1 ]; then
+  add_existing_entry scripts/agent-verify.ps1
+fi
+if [ -f scripts/agent-bootstrap.sh ]; then
+  add_existing_entry scripts/agent-bootstrap.sh
+fi
+if [ -f scripts/agent-bootstrap.ps1 ]; then
+  add_existing_entry scripts/agent-bootstrap.ps1
+fi
+
+use_bundled_agent_entrypoints=1
+if [ -n "$existing_agent_entries" ]; then
+  use_bundled_agent_entrypoints=0
+  info "Existing agent entrypoint(s) found: $existing_agent_entries"
+  info 'Skipping bundled .githooks and default agent verify/bootstrap scripts.'
+fi
+
 ensure_dir() {
   path=$1
   if [ -d "$path" ]; then
@@ -178,7 +215,9 @@ append_line_if_missing() {
 ensure_dir docs
 ensure_dir docs/agent
 ensure_dir scripts
-ensure_dir .githooks
+if [ "$use_bundled_agent_entrypoints" -eq 1 ]; then
+  ensure_dir .githooks
+fi
 ensure_dir .oceans
 ensure_dir .oceans/templates
 
@@ -190,17 +229,27 @@ copy_template_if_missing AGENTS.template.md .oceans/templates/AGENTS.template.md
 copy_template_if_missing CLAUDE.template.md .oceans/templates/CLAUDE.template.md
 copy_template_if_missing branch-workflow.template.md docs/agent/branch-workflow.md
 copy_template_if_missing project-reference.template.md docs/agent/project-reference.md
-copy_template_if_missing agent-bootstrap.template.ps1 scripts/agent-bootstrap.ps1
-copy_template_if_missing agent-verify.template.ps1 scripts/agent-verify.ps1
-copy_template_if_missing agent-verify.template.sh scripts/agent-verify.sh
-copy_file_if_missing "$SCRIPT_DIR/agent-standards-hook.sh" scripts/agent-standards-hook.sh
 copy_file_if_missing "$SCRIPT_DIR/dedupe-agent-docs.sh" scripts/dedupe-agent-docs.sh
 copy_template_if_missing agent-standards.conf.template .oceans/agent-standards.conf
-copy_template_if_missing pre-commit.template .githooks/pre-commit
-copy_template_if_missing commit-msg.template .githooks/commit-msg
 
-chmod +x scripts/agent-verify.sh scripts/agent-standards-hook.sh scripts/dedupe-agent-docs.sh .githooks/pre-commit .githooks/commit-msg
-append_line_if_missing .gitattributes '.githooks/* text eol=lf'
+if [ "$use_bundled_agent_entrypoints" -eq 1 ]; then
+  copy_template_if_missing agent-bootstrap.template.ps1 scripts/agent-bootstrap.ps1
+  copy_template_if_missing agent-verify.template.ps1 scripts/agent-verify.ps1
+  copy_template_if_missing agent-verify.template.sh scripts/agent-verify.sh
+  copy_file_if_missing "$SCRIPT_DIR/agent-standards-hook.sh" scripts/agent-standards-hook.sh
+  copy_template_if_missing pre-commit.template .githooks/pre-commit
+  copy_template_if_missing commit-msg.template .githooks/commit-msg
+fi
+
+for executable in scripts/dedupe-agent-docs.sh scripts/agent-verify.sh scripts/agent-standards-hook.sh .githooks/pre-commit .githooks/commit-msg; do
+  if [ -e "$executable" ]; then
+    chmod +x "$executable"
+  fi
+done
+
+if [ "$use_bundled_agent_entrypoints" -eq 1 ]; then
+  append_line_if_missing .gitattributes '.githooks/* text eol=lf'
+fi
 append_line_if_missing .gitattributes 'scripts/*.sh text eol=lf'
 
 if [ "$USE_LOCAL_WORKTREES" -eq 1 ]; then
@@ -209,10 +258,23 @@ if [ "$USE_LOCAL_WORKTREES" -eq 1 ]; then
 fi
 
 if [ "$ENABLE_HOOKS" -eq 1 ]; then
-  git config core.hooksPath .githooks
-  info 'Configured git core.hooksPath=.githooks'
+  if [ "$use_bundled_agent_entrypoints" -eq 1 ]; then
+    git config core.hooksPath .githooks
+    info 'Configured git core.hooksPath=.githooks'
+  elif [ -n "$configured_hooks_path" ]; then
+    info "Keeping existing git core.hooksPath=$configured_hooks_path"
+  elif [ -d common/git-hooks ]; then
+    git config core.hooksPath common/git-hooks
+    info 'Configured git core.hooksPath=common/git-hooks'
+  else
+    info 'Existing agent scripts detected; no hook path inferred. Configure hooks through the project workflow.'
+  fi
 else
-  info 'Hooks scaffolded but not enabled. Run: git config core.hooksPath .githooks'
+  if [ "$use_bundled_agent_entrypoints" -eq 1 ]; then
+    info 'Hooks scaffolded but not enabled. Run: git config core.hooksPath .githooks'
+  else
+    info 'Bundled hooks were not scaffolded because the project already has agent entrypoints.'
+  fi
 fi
 
 info 'Bootstrap complete. Review existing files before migrating content.'

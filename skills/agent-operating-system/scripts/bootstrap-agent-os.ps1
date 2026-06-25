@@ -122,10 +122,40 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($repoRoot)) {
 Set-Location $repoRoot
 Info "Bootstrapping agent OS in $repoRoot"
 
+$existingAgentEntries = [System.Collections.Generic.List[string]]::new()
+$configuredHooksPath = (& git config --get core.hooksPath 2>$null)
+if ($LASTEXITCODE -ne 0) {
+    $configuredHooksPath = ''
+}
+if (-not [string]::IsNullOrWhiteSpace($configuredHooksPath) -and $configuredHooksPath -ne '.githooks') {
+    $existingAgentEntries.Add("core.hooksPath=$configuredHooksPath")
+}
+if (Test-Path -LiteralPath (Join-Path $repoRoot 'common/git-hooks') -PathType Container) {
+    $existingAgentEntries.Add('common/git-hooks')
+}
+foreach ($path in @(
+    'scripts/agent-verify.sh',
+    'scripts/agent-verify.ps1',
+    'scripts/agent-bootstrap.sh',
+    'scripts/agent-bootstrap.ps1'
+)) {
+    if (Test-Path -LiteralPath (Join-Path $repoRoot $path) -PathType Leaf) {
+        $existingAgentEntries.Add($path)
+    }
+}
+
+$useBundledAgentEntryPoints = $existingAgentEntries.Count -eq 0
+if (-not $useBundledAgentEntryPoints) {
+    Info "Existing agent entrypoint(s) found: $($existingAgentEntries -join ', ')"
+    Info 'Skipping bundled .githooks and default agent verify/bootstrap scripts.'
+}
+
 Ensure-Directory (Join-Path $repoRoot 'docs')
 Ensure-Directory (Join-Path $repoRoot 'docs/agent')
 Ensure-Directory (Join-Path $repoRoot 'scripts')
-Ensure-Directory (Join-Path $repoRoot '.githooks')
+if ($useBundledAgentEntryPoints) {
+    Ensure-Directory (Join-Path $repoRoot '.githooks')
+}
 Ensure-Directory (Join-Path $repoRoot '.oceans')
 Ensure-Directory (Join-Path $repoRoot '.oceans/templates')
 
@@ -137,16 +167,21 @@ Copy-TemplateIfMissing 'AGENTS.template.md' (Join-Path $repoRoot '.oceans/templa
 Copy-TemplateIfMissing 'CLAUDE.template.md' (Join-Path $repoRoot '.oceans/templates/CLAUDE.template.md')
 Copy-TemplateIfMissing 'branch-workflow.template.md' (Join-Path $repoRoot 'docs/agent/branch-workflow.md')
 Copy-TemplateIfMissing 'project-reference.template.md' (Join-Path $repoRoot 'docs/agent/project-reference.md')
-Copy-TemplateIfMissing 'agent-bootstrap.template.ps1' (Join-Path $repoRoot 'scripts/agent-bootstrap.ps1')
-Copy-TemplateIfMissing 'agent-verify.template.ps1' (Join-Path $repoRoot 'scripts/agent-verify.ps1')
-Copy-TemplateIfMissing 'agent-verify.template.sh' (Join-Path $repoRoot 'scripts/agent-verify.sh')
-Copy-FileIfMissing (Join-Path $scriptDir 'agent-standards-hook.sh') (Join-Path $repoRoot 'scripts/agent-standards-hook.sh')
 Copy-FileIfMissing (Join-Path $scriptDir 'dedupe-agent-docs.sh') (Join-Path $repoRoot 'scripts/dedupe-agent-docs.sh')
 Copy-TemplateIfMissing 'agent-standards.conf.template' (Join-Path $repoRoot '.oceans/agent-standards.conf')
-Copy-TemplateIfMissing 'pre-commit.template' (Join-Path $repoRoot '.githooks/pre-commit')
-Copy-TemplateIfMissing 'commit-msg.template' (Join-Path $repoRoot '.githooks/commit-msg')
 
-Append-LineIfMissing (Join-Path $repoRoot '.gitattributes') '.githooks/* text eol=lf'
+if ($useBundledAgentEntryPoints) {
+    Copy-TemplateIfMissing 'agent-bootstrap.template.ps1' (Join-Path $repoRoot 'scripts/agent-bootstrap.ps1')
+    Copy-TemplateIfMissing 'agent-verify.template.ps1' (Join-Path $repoRoot 'scripts/agent-verify.ps1')
+    Copy-TemplateIfMissing 'agent-verify.template.sh' (Join-Path $repoRoot 'scripts/agent-verify.sh')
+    Copy-FileIfMissing (Join-Path $scriptDir 'agent-standards-hook.sh') (Join-Path $repoRoot 'scripts/agent-standards-hook.sh')
+    Copy-TemplateIfMissing 'pre-commit.template' (Join-Path $repoRoot '.githooks/pre-commit')
+    Copy-TemplateIfMissing 'commit-msg.template' (Join-Path $repoRoot '.githooks/commit-msg')
+}
+
+if ($useBundledAgentEntryPoints) {
+    Append-LineIfMissing (Join-Path $repoRoot '.gitattributes') '.githooks/* text eol=lf'
+}
 Append-LineIfMissing (Join-Path $repoRoot '.gitattributes') 'scripts/*.sh text eol=lf'
 
 if ($UseLocalWorktrees) {
@@ -155,21 +190,44 @@ if ($UseLocalWorktrees) {
 }
 
 if ($IsLinux -or $IsMacOS) {
-    & chmod +x (Join-Path $repoRoot 'scripts/agent-verify.sh') 2>$null
-    & chmod +x (Join-Path $repoRoot 'scripts/agent-standards-hook.sh') 2>$null
-    & chmod +x (Join-Path $repoRoot 'scripts/dedupe-agent-docs.sh') 2>$null
-    & chmod +x (Join-Path $repoRoot '.githooks/pre-commit') 2>$null
-    & chmod +x (Join-Path $repoRoot '.githooks/commit-msg') 2>$null
+    foreach ($path in @(
+        'scripts/dedupe-agent-docs.sh',
+        'scripts/agent-verify.sh',
+        'scripts/agent-standards-hook.sh',
+        '.githooks/pre-commit',
+        '.githooks/commit-msg'
+    )) {
+        $fullPath = Join-Path $repoRoot $path
+        if (Test-Path -LiteralPath $fullPath) {
+            & chmod +x $fullPath 2>$null
+        }
+    }
 }
 
 if ($EnableHooks) {
-    & git config core.hooksPath .githooks
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Failed to configure core.hooksPath'
+    if ($useBundledAgentEntryPoints) {
+        & git config core.hooksPath .githooks
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to configure core.hooksPath'
+        }
+        Info 'Configured git core.hooksPath=.githooks'
+    } elseif (-not [string]::IsNullOrWhiteSpace($configuredHooksPath)) {
+        Info "Keeping existing git core.hooksPath=$configuredHooksPath"
+    } elseif (Test-Path -LiteralPath (Join-Path $repoRoot 'common/git-hooks') -PathType Container) {
+        & git config core.hooksPath common/git-hooks
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to configure core.hooksPath'
+        }
+        Info 'Configured git core.hooksPath=common/git-hooks'
+    } else {
+        Info 'Existing agent scripts detected; no hook path inferred. Configure hooks through the project workflow.'
     }
-    Info 'Configured git core.hooksPath=.githooks'
 } else {
-    Info 'Hooks scaffolded but not enabled. Run: git config core.hooksPath .githooks'
+    if ($useBundledAgentEntryPoints) {
+        Info 'Hooks scaffolded but not enabled. Run: git config core.hooksPath .githooks'
+    } else {
+        Info 'Bundled hooks were not scaffolded because the project already has agent entrypoints.'
+    }
 }
 
 Info 'Bootstrap complete. Review existing files before migrating content.'

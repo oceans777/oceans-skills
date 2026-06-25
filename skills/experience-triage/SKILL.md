@@ -73,12 +73,12 @@ Use this exact shape unless the user asks for another format:
 
 ## Current-Repo Hints
 
-When a repository has an `AGENTS.md`, treat it as the canonical project instruction layer. For Discuz X5 template work, classify common lessons like this:
+When a repository has an `AGENTS.md`, treat it as the canonical project instruction layer. Classify common lessons like this:
 
-- "Do not maintain compiled template cache as source" -> top-level `AGENTS.md` if not already present.
-- "Only this plugin has this static asset convention" -> nested rule near that plugin.
-- "After template changes, inspect desktop/mobile/login/navigation/static assets" -> skill or QA checklist.
-- "Run `php -l` on changed PHP files before commit" -> verification script or hook if it must be enforced.
+- "Do not maintain generated cache as source" -> top-level `AGENTS.md` if it is a hard project boundary; otherwise a path-scoped rule near the generator.
+- "Only this package uses this asset convention" -> nested rule near that package.
+- "After UI changes, inspect desktop/mobile/interactive states" -> skill or QA checklist.
+- "Run this exact lint command before commit" -> verification script or hook if it must be enforced.
 - "How to release this repository" -> skill if it branches; script/tool if it is deterministic.
 
 ## Writing Rules

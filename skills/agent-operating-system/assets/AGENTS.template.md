@@ -15,12 +15,14 @@
 - 不安装来源不明的依赖；确需新增依赖时，应说明用途、维护状态和替代方案。
 - 不把临时调试输出、测试账号、一次性脚本或本地路径泄露到生产代码中。
 - 不用不可信输入拼接 Shell 命令、SQL 或文件路径；涉及数据库访问时使用参数化查询或既有安全 API。
+- 不手改由 IDL、schema 或构建流程生成的文件；应先修改源头并运行对应生成流程。
 
 ## 4. 工作边界
 
 - 开始修改前，先确认当前任务的单一变更意图，并检查工作区状态。
 - 除只读分析或用户明确说明不使用 worktree 外，所有文件修改、暂存、提交和推送都必须在 linked git worktree 中进行；主仓库 checkout 只用于查看、协调和创建 worktree。
 - 如果当前不在 linked git worktree，必须先通过 `git worktree list` 判断现有 worktree，并为当前任务创建或切换到独立 worktree；无法创建或切换时，停止并说明阻塞原因，不得在主仓库 checkout 中直接改文件。
+- 进入新 linked worktree 后，先运行项目级初始化脚本（如 `scripts/agent-worktree-init.sh` 或 `scripts/agent-bootstrap.sh`，以本仓库实际文件为准）；不要手动软链依赖目录或缓存目录，除非项目脚本明确要求。
 - 已存在的未提交或未跟踪文件默认视为用户工作成果，不得擅自删除、覆盖或回滚。
 - 只修改与任务目标直接相关的文件；发现无关问题时，记录并说明，不顺手扩散重构。
 - 如果当前任务必须触碰用户已有改动，应先理解这些改动并在其基础上继续，不能简单覆盖。
@@ -41,8 +43,8 @@
 - 高频、全局、每次会话都必须知道的规则，才写入本文件。
 - 只对某个目录、文件类型、插件或模块生效的规则，优先放到对应目录的局部规则文件。
 - 多步流程、专题 checklist、分支判断和复用工作流，优先沉淀为 skill 或 `docs/agent/` 流程文档。
-- 能用命令确定检查结果的内容，优先放到 `scripts/`；本地钩子启用、修复和初始化入口是 `scripts/agent-bootstrap.ps1`，提交前基础门禁与专项验证入口是 `scripts/agent-verify.ps1`。
-- 必须每次执行、不能依赖模型自觉的约束，优先放到 `.githooks/`；hooks 的安装与修复由 `scripts/agent-bootstrap.ps1` 负责，实际校验逻辑由 `scripts/agent-verify.ps1` 承接。
+- 能用命令确定检查结果的内容，优先放到 `scripts/`；本地钩子启用、修复和初始化入口以本仓库实际脚本为准，例如 `scripts/agent-bootstrap.sh`、`scripts/agent-bootstrap.ps1` 或同类脚本。
+- 必须每次执行、不能依赖模型自觉的约束，优先放到 Git hooks；已有 `.githooks/`、`common/git-hooks/` 或平台托管 hooks 时，优先复用既有入口，实际校验逻辑由项目验证脚本承接。
 - 长链接、官方资料、目录说明等参考资料，不常驻本文件，放到 `docs/agent/`。
 - 一次性、过度私人、尚未复现的经验，默认不沉淀；等再次出现再用 `experience-triage` 判断归属。
 
@@ -67,7 +69,7 @@
 ## 9. 验证入口
 
 - 声称完成、提交、推送或同步前，必须运行与改动匹配的验证。
-- 提交前默认运行 `scripts/agent-verify.ps1` 完成基础门禁；本地 hooks 未启用或需要修复时，运行 `scripts/agent-bootstrap.ps1`。
-- 专项验证使用 `scripts/agent-verify.ps1`，自动同步到 `{{BASE_BRANCH}}` 时使用 `-AllowDevBranch`。
+- 提交前默认运行项目验证入口完成基础门禁，例如 `scripts/agent-verify.sh`、`scripts/agent-verify.ps1`、包管理器脚本或语言测试命令；本地 hooks 未启用或需要修复时，运行项目 bootstrap 脚本。
+- 专项验证使用本仓库既有验证入口；在基线分支做文档维护或合并检查时，使用项目支持的显式 allow 参数。
 - 代码、模板、样式、脚本、文档等专项验证细节由脚本、相关 skill 或 `docs/agent/` 流程文档承接。
 - 无法验证时必须说明原因和剩余风险，不能虚构测试、截图或命令输出。

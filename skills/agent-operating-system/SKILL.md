@@ -1,6 +1,6 @@
 ---
 name: agent-operating-system
-description: 'Use when a user wants to audit, bootstrap, migrate, dedupe, or operate a project using an eight-layer agent workflow with AGENTS.md, CLAUDE.md, local rules, skills, scripts, Git hooks, first-commit standards guards, worktrees, subagents, verification, commits, merges, and post-task learning capture.'
+description: Use when a user asks to audit, bootstrap, migrate, dedupe, or operate project-level agent workflow rules, skills, scripts, hooks, worktrees, subagents, verification, commits, merges, or learning capture.
 ---
 
 # Agent Operating System
@@ -53,7 +53,7 @@ Choose exactly one primary mode from the user's request:
 
 ## Audit Flow
 
-1. Read `AGENTS.md`, `CLAUDE.md`, `.githooks/`, `scripts/`, `docs/agent/`, existing skill mentions, and worktree configuration.
+1. Read `AGENTS.md`, `CLAUDE.md`, path-scoped rule files, hook locations such as `.githooks/` or `common/git-hooks/`, `scripts/`, `docs/agent/`, existing skill mentions, and worktree configuration.
 2. Classify each rule with this order:
    - Must always execute, zero exceptions -> hook.
    - Can be mechanically checked -> script/tool.
@@ -62,7 +62,8 @@ Choose exactly one primary mode from the user's request:
    - Long reference -> `docs/agent/`.
    - Every session must know it -> startup file.
    - One-off or unproven -> do not persist.
-3. Report findings as:
+3. Treat generated files as outputs, not durable rules. If a rule mentions IDL, schema, cache, build output, package locks, or generated assets, identify the source of truth and the generator before recommending edits.
+4. Report findings as:
 
 ```text
 Layer:
@@ -86,6 +87,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File <skill-dir>/scripts/bootstra
 ```
 
 The script creates missing files only. It must not overwrite existing project files. If files exist, inspect and migrate manually.
+
+If a repository already has agent scripts, Rush-managed hooks, language-specific
+hooks, or a platform-specific verification entrypoint, reuse and reference those
+instead of replacing them with the bundled scaffold.
 
 Created scaffold:
 
@@ -188,6 +193,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File <skill-dir>/scripts/start-ag
 
 The script creates one task branch and one worktree from the baseline branch. It refuses to reuse an existing branch or worktree path.
 
+After entering a new worktree, read the project startup rules again and run any
+project-level worktree initialization script, such as
+`scripts/agent-worktree-init.sh` or `scripts/agent-bootstrap.sh`, before editing.
+Do not hand-create dependency symlinks or cache links unless the project script
+explicitly says to do so.
+
 Use subagents only when tasks are independent and the user has asked for subagent or parallel work. Give each subagent a distinct worktree, branch, file ownership, verification command, and merge target. Tell each subagent that other work may exist and it must not revert unrelated changes.
 
 For detailed policy, read `references/worktree-and-subagent.md`. For delegation wording, read `references/subagent-prompt-templates.md`.
@@ -197,11 +208,15 @@ For detailed policy, read `references/worktree-and-subagent.md`. For delegation 
 Before finishing a task branch:
 
 1. Stage only task-owned files.
-2. Run project verification, including `scripts/agent-verify.ps1` if present.
+2. Run project verification using the repository's own entrypoint, such as
+   `scripts/agent-verify.sh`, `scripts/agent-verify.ps1`, Rush hooks, package
+   scripts, or language test commands.
 3. Commit with the project's required message format.
-4. Push the task branch.
-5. Merge or open PR according to project policy.
-6. Push the baseline branch only when authorized by project rules.
+4. Push the task branch only when the user request or project policy calls for it.
+5. Merge, open a PR, or leave the branch according to project policy.
+6. Push the baseline branch only when authorized by project rules. Never infer
+   that `main` is the push target when the project defines another integration
+   branch.
 7. Run proactive experience capture. The user does not need to know whether something is a "lesson" or "rule"; infer it from friction signals and use `experience-triage` logic only when there is a durable lesson.
 
 For detailed capture signals and output shape, read `references/proactive-experience-capture.md`.
@@ -227,4 +242,6 @@ that no durable record is needed.
 - Dispatching subagents into the same checkout: give each editing subagent a separate branch/worktree.
 - Overwriting an existing project workflow: audit first, patch narrowly.
 - Hand-writing task setup every time: use `start-agent-task.ps1` when branch/worktree setup matters.
+- Skipping project-specific worktree initialization: linked worktrees often need local dependency/cache setup before verification.
+- Editing generated output to hide a symptom: fix the source contract and rerun the generator.
 - Waiting for the user to name a "rule" or "lesson": infer durable lessons from friction signals and offer a triage draft.

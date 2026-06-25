@@ -52,6 +52,22 @@ The script:
 - Refuses to overwrite an existing local branch, remote branch, or worktree path.
 - Optionally appends `.worktrees/` to `.gitignore` with `-EnsureIgnore`.
 
+## Project Worktree Initialization
+
+After a worktree is created:
+
+1. Enter the new worktree.
+2. Re-read the project's startup rules from that checkout.
+3. Run the repository's worktree/bootstrap script when present, such as
+   `scripts/agent-worktree-init.sh`, `scripts/agent-bootstrap.sh`, or the
+   platform-specific equivalent.
+4. Use any generated environment helper that script creates before running
+   dependency or verification commands.
+
+Do not hand-wire dependency directories, package manager stores, or generated
+cache paths. If the project needs special linkage, it should live in the
+project script so every agent gets the same setup.
+
 ## Subagent Use
 
 Use subagents when the user explicitly asks for subagents, delegation, or
@@ -94,8 +110,10 @@ Before merging a task branch:
 2. Rebase or merge latest baseline into the task branch.
 3. Re-run verification.
 4. Push task branch.
-5. Merge via project policy: PR, no-ff merge, or fast-forward.
-6. Push baseline only when the project rules authorize it.
+5. Merge via project policy: PR, no-ff merge, fast-forward, or leave the branch
+   for a maintainer.
+6. Push baseline only when the project rules authorize it. Respect projects that
+   use `dev` or another integration branch instead of `main`.
 
 Conflicts are not mechanical. Stop, explain affected files, and resolve with
 the smallest possible edits.

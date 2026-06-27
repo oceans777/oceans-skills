@@ -86,6 +86,7 @@ require_claude=$(config_value "$config_file" require_claude_md 0)
 open_on_first_init=$(config_value "$config_file" open_on_first_init 1)
 commit_message_policy=$(config_value "$config_file" commit_message conventional)
 baseline_branch=$(config_value "$config_file" baseline_branch main)
+dev_branch=$(config_value "$config_file" dev_branch dev)
 task_prefix=$(config_value "$config_file" task_prefix codex)
 worktree_dir=$(config_value "$config_file" worktree_dir .worktrees)
 
@@ -117,10 +118,12 @@ render_template() {
 
   awk \
     -v baseline="$baseline_branch" \
+    -v dev_branch="$dev_branch" \
     -v task_prefix="$task_prefix" \
     -v worktree_dir="$worktree_dir" '
       {
         gsub(/\{\{BASE_BRANCH\}\}/, baseline)
+        gsub(/\{\{DEV_BRANCH\}\}/, dev_branch)
         gsub(/\{\{TASK_PREFIX\}\}/, task_prefix)
         gsub(/\{\{WORKTREE_DIR\}\}/, worktree_dir)
         print

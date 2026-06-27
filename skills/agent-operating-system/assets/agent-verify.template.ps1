@@ -4,6 +4,7 @@ param(
     [switch]$AllowRiskyFiles,
     [string]$CommitMessageFile,
     [string]$BaselineBranch = '{{BASE_BRANCH}}',
+    [string]$DevBranch = '{{DEV_BRANCH}}',
     [string]$TaskPrefix = '{{TASK_PREFIX}}'
 )
 
@@ -88,6 +89,7 @@ Set-Location $repoRoot
 
 $configFile = Join-Path $repoRoot '.oceans/agent-standards.conf'
 $BaselineBranch = Get-AgentConfigValue $configFile 'baseline_branch' $BaselineBranch
+$DevBranch = Get-AgentConfigValue $configFile 'dev_branch' $DevBranch
 $TaskPrefix = Get-AgentConfigValue $configFile 'task_prefix' $TaskPrefix
 $requireAgents = Get-AgentConfigValue $configFile 'require_agents_md' '1'
 $requireClaude = Get-AgentConfigValue $configFile 'require_claude_md' '0'
@@ -102,9 +104,11 @@ $branch = (& git branch --show-current).Trim()
 if ([string]::IsNullOrWhiteSpace($branch)) {
     Fail 'Detached HEAD is not allowed for normal agent work.'
 } elseif ($branch -eq $BaselineBranch -and -not ($AllowBaselineBranch -or $AllowDevBranch -or $isMergeInProgress)) {
-    Fail "Work is on $BaselineBranch. Use a $TaskPrefix/<task-name> branch or pass -AllowDevBranch for an intentional merge."
+    Fail "Work is on $BaselineBranch. Use $DevBranch or a $TaskPrefix/<task-name> branch, or pass -AllowBaselineBranch for intentional baseline maintenance."
+} elseif ($branch -eq $DevBranch) {
+    Pass "Development branch policy: $branch"
 } elseif ($branch -ne $BaselineBranch -and $branch -notlike "$TaskPrefix/*") {
-    Fail "Unexpected branch '$branch'. Expected $TaskPrefix/<task-name> or $BaselineBranch."
+    Fail "Unexpected branch '$branch'. Expected $DevBranch, $TaskPrefix/<task-name>, or $BaselineBranch."
 } else {
     Pass "Branch policy: $branch"
 }

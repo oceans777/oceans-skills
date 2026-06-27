@@ -1,6 +1,7 @@
 param(
     [string]$ProjectRoot = (Get-Location).Path,
-    [string]$BaselineBranch = 'dev',
+    [string]$BaselineBranch = 'main',
+    [string]$DevBranch = 'dev',
     [string]$TaskPrefix = 'codex',
     [string]$WorktreeDir = '.worktrees',
     [switch]$EnableHooks,
@@ -35,6 +36,7 @@ function Expand-Template($content) {
     $requireClaudeValue = if ($RequireClaude) { '1' } else { '0' }
     return $content.
         Replace('{{BASE_BRANCH}}', $BaselineBranch).
+        Replace('{{DEV_BRANCH}}', $DevBranch).
         Replace('{{TASK_PREFIX}}', $TaskPrefix).
         Replace('{{WORKTREE_DIR}}', $WorktreeDir).
         Replace('{{REQUIRE_CLAUDE_MD}}', $requireClaudeValue)

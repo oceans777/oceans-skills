@@ -2,7 +2,8 @@
 set -eu
 
 PROJECT_ROOT=$(pwd)
-BASELINE_BRANCH=dev
+BASELINE_BRANCH=main
+DEV_BRANCH=dev
 TASK_PREFIX=codex
 WORKTREE_DIR=.worktrees
 ENABLE_HOOKS=0
@@ -19,7 +20,8 @@ Usage: bootstrap-agent-os.sh [options]
 
 Options:
   --project-root <path>       Repository path. Defaults to current directory.
-  --baseline-branch <name>    Baseline branch. Defaults to dev.
+  --baseline-branch <name>    Protected baseline branch. Defaults to main.
+  --dev-branch <name>         Development integration branch. Defaults to dev.
   --task-prefix <prefix>      Task branch prefix. Defaults to codex.
   --worktree-dir <path>       Local worktree directory. Defaults to .worktrees.
   --enable-hooks              Set git core.hooksPath=.githooks.
@@ -38,6 +40,11 @@ while [ "$#" -gt 0 ]; do
     --baseline-branch)
       [ "$#" -ge 2 ] || { echo '--baseline-branch needs a value.' >&2; exit 2; }
       BASELINE_BRANCH=$2
+      shift 2
+      ;;
+    --dev-branch)
+      [ "$#" -ge 2 ] || { echo '--dev-branch needs a value.' >&2; exit 2; }
+      DEV_BRANCH=$2
       shift 2
       ;;
     --task-prefix)
@@ -110,11 +117,13 @@ render_template() {
   target=$2
   awk \
     -v baseline="$BASELINE_BRANCH" \
+    -v dev_branch="$DEV_BRANCH" \
     -v task_prefix="$TASK_PREFIX" \
     -v worktree_dir="$WORKTREE_DIR" \
     -v require_claude="$REQUIRE_CLAUDE" '
       {
         gsub(/\{\{BASE_BRANCH\}\}/, baseline)
+        gsub(/\{\{DEV_BRANCH\}\}/, dev_branch)
         gsub(/\{\{TASK_PREFIX\}\}/, task_prefix)
         gsub(/\{\{WORKTREE_DIR\}\}/, worktree_dir)
         gsub(/\{\{REQUIRE_CLAUDE_MD\}\}/, require_claude)

@@ -8,8 +8,7 @@ Use this mapping for parallel agentic development:
 one task = one branch = one worktree = optional one implementer subagent
 ```
 
-The baseline checkout should remain clean and on the integration branch
-(`dev`, `main`, or the project-defined baseline).
+The coordination checkout should remain clean and on the project-defined integration branch, usually `dev`. Treat protected branches such as `main` as baselines unless the project says otherwise.
 
 ## Worktree Creation Policy
 

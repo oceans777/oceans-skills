@@ -4,5 +4,6 @@ require_claude_md={{REQUIRE_CLAUDE_MD}}
 open_on_first_init=1
 commit_message=conventional
 baseline_branch={{BASE_BRANCH}}
+dev_branch={{DEV_BRANCH}}
 task_prefix={{TASK_PREFIX}}
 worktree_dir={{WORKTREE_DIR}}

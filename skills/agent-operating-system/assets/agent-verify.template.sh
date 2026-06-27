@@ -5,6 +5,7 @@ COMMIT_MESSAGE_FILE=
 ALLOW_BASELINE_BRANCH=0
 ALLOW_RISKY_FILES=0
 BASELINE_BRANCH='{{BASE_BRANCH}}'
+DEV_BRANCH='{{DEV_BRANCH}}'
 TASK_PREFIX='{{TASK_PREFIX}}'
 failures=0
 
@@ -121,6 +122,7 @@ cd "$repo_root"
 
 config_file=.oceans/agent-standards.conf
 BASELINE_BRANCH=$(config_value "$config_file" baseline_branch "$BASELINE_BRANCH")
+DEV_BRANCH=$(config_value "$config_file" dev_branch "$DEV_BRANCH")
 TASK_PREFIX=$(config_value "$config_file" task_prefix "$TASK_PREFIX")
 REQUIRE_AGENTS=$(config_value "$config_file" require_agents_md 1)
 REQUIRE_CLAUDE=$(config_value "$config_file" require_claude_md 0)
@@ -139,11 +141,13 @@ fi
 if [ -z "$branch" ]; then
   fail '常规 agent 工作不允许处于 detached HEAD 状态。'
 elif [ "$branch" = "$BASELINE_BRANCH" ] && [ "$ALLOW_BASELINE_BRANCH" -ne 1 ] && [ "$merge_in_progress" -ne 1 ]; then
-  fail "当前位于 $BASELINE_BRANCH。请使用 $TASK_PREFIX/<task-name> 分支，或在明确合并时传入 --allow-dev-branch。"
+  fail "当前位于 $BASELINE_BRANCH。请使用 $DEV_BRANCH 或 $TASK_PREFIX/<task-name> 分支，或在明确维护基线时传入 --allow-baseline-branch。"
+elif [ "$branch" = "$DEV_BRANCH" ]; then
+  pass "开发分支规则：$branch"
 elif [ "$branch" != "$BASELINE_BRANCH" ]; then
   case "$branch" in
     "$TASK_PREFIX"/*) pass "分支规则：$branch" ;;
-    *) fail "分支 '$branch' 不符合预期。应为 $TASK_PREFIX/<task-name> 或 $BASELINE_BRANCH。" ;;
+    *) fail "分支 '$branch' 不符合预期。应为 $DEV_BRANCH、$TASK_PREFIX/<task-name> 或 $BASELINE_BRANCH。" ;;
   esac
 else
   pass "分支规则：$branch"

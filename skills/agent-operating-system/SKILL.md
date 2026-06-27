@@ -87,6 +87,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File <skill-dir>/scripts/bootstra
 
 The script creates missing files only. It must not overwrite existing project files. If files exist, inspect and migrate manually.
 
+By default, generated examples are written in Chinese, protect `main` as the baseline branch, use `dev` as the development integration branch, and use `codex/` for task branches. Override with `--baseline-branch`, `--dev-branch`, or `--task-prefix` only when the project has a different policy.
+
 Created scaffold:
 
 - `AGENTS.md`
@@ -186,7 +188,7 @@ When starting a task branch, prefer the bundled script:
 powershell -NoProfile -ExecutionPolicy Bypass -File <skill-dir>/scripts/start-agent-task.ps1 -ProjectRoot <repo> -TaskName "<task>" -BaselineBranch dev -TaskPrefix codex -EnsureIgnore
 ```
 
-The script creates one task branch and one worktree from the baseline branch. It refuses to reuse an existing branch or worktree path.
+The task-start script keeps its `-BaselineBranch` parameter for compatibility; pass the project's development integration branch, usually `dev`, so the task worktree starts from the branch that will receive the merge. It refuses to reuse an existing branch or worktree path.
 
 Use subagents only when tasks are independent and the user has asked for subagent or parallel work. Give each subagent a distinct worktree, branch, file ownership, verification command, and merge target. Tell each subagent that other work may exist and it must not revert unrelated changes.
 
@@ -201,7 +203,7 @@ Before finishing a task branch:
 3. Commit with the project's required message format.
 4. Push the task branch.
 5. Merge or open PR according to project policy.
-6. Push the baseline branch only when authorized by project rules.
+6. Push the development integration branch only when authorized by project rules.
 7. Run proactive experience capture. The user does not need to know whether something is a "lesson" or "rule"; infer it from friction signals and use `experience-triage` logic only when there is a durable lesson.
 
 For detailed capture signals and output shape, read `references/proactive-experience-capture.md`.

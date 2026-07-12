@@ -28,6 +28,8 @@ cd {{WORKTREE_DIR}}/<task-name>
 
 ## 完成任务
 
+默认只完成验证和任务分支的原子提交。仅当用户在当前任务中明确要求远程同步时，才执行下面的 `git push`。
+
 ```sh
 <运行匹配验证命令>
 git add -- <task-files>
@@ -36,6 +38,8 @@ git push -u origin {{TASK_PREFIX}}/<task-name>
 ```
 
 ## 合回开发分支
+
+合入并推送共享开发分支会影响他人；只在当前任务明确授权时执行。
 
 ```sh
 git switch {{DEV_BRANCH}}

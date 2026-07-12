@@ -198,6 +198,7 @@ fi
 copy_template_if_missing AGENTS.template.md .oceans/templates/AGENTS.template.md
 copy_template_if_missing CLAUDE.template.md .oceans/templates/CLAUDE.template.md
 copy_template_if_missing branch-workflow.template.md docs/agent/branch-workflow.md
+copy_template_if_missing prompting-workflow.template.md docs/agent/prompting-workflow.md
 copy_template_if_missing project-reference.template.md docs/agent/project-reference.md
 copy_template_if_missing agent-bootstrap.template.ps1 scripts/agent-bootstrap.ps1
 copy_template_if_missing agent-verify.template.ps1 scripts/agent-verify.ps1

@@ -183,6 +183,13 @@ fi
 
 check_required_doc AGENTS.md "$REQUIRE_AGENTS"
 check_required_doc CLAUDE.md "$REQUIRE_CLAUDE"
+check_required_doc docs/agent/prompting-workflow.md 1
+if is_enabled "$REQUIRE_CLAUDE" && ! grep -Fq 'AGENTS.md' CLAUDE.md; then
+  fail 'CLAUDE.md 必须指向根目录 AGENTS.md，不得维护一套漂移的平行规则。'
+fi
+if ! grep -Fq 'docs/agent/prompting-workflow.md' AGENTS.md; then
+  fail 'AGENTS.md 必须索引 docs/agent/prompting-workflow.md。'
+fi
 
 if [ -n "$COMMIT_MESSAGE_FILE" ] &&
    [ "$COMMIT_MESSAGE_POLICY" != off ] &&

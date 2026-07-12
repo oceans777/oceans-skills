@@ -158,6 +158,13 @@ if ($stagedFiles.Count -gt 0 -and -not $AllowRiskyFiles) {
 
 Test-AgentDoc 'AGENTS.md' $requireAgents
 Test-AgentDoc 'CLAUDE.md' $requireClaude
+Test-AgentDoc 'docs/agent/prompting-workflow.md' '1'
+if ((Test-Enabled $requireClaude) -and -not (Select-String -LiteralPath (Join-Path $repoRoot 'CLAUDE.md') -SimpleMatch 'AGENTS.md' -Quiet)) {
+    Fail 'CLAUDE.md must point to root AGENTS.md instead of maintaining a drifting parallel rule set.'
+}
+if (-not (Select-String -LiteralPath (Join-Path $repoRoot 'AGENTS.md') -SimpleMatch 'docs/agent/prompting-workflow.md' -Quiet)) {
+    Fail 'AGENTS.md must index docs/agent/prompting-workflow.md.'
+}
 
 $phpFiles = @()
 if ($stagedFiles.Count -gt 0) {

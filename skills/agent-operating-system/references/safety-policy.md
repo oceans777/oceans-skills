@@ -25,6 +25,10 @@ Require explicit user confirmation for:
 - deploy/release
 - deleting worktrees with unmerged work
 
+## Shared Side Effects
+
+Treat external messages, publishing, remote pushes, shared-branch merges, and changes to information other people depend on as shared side effects. Execute them only when the current user request explicitly authorizes the action. A repository may define the target branch and validation policy, but it should not convert an implementation request into permanent blanket permission to affect shared state.
+
 ## Hook Scope
 
 Hooks should be deterministic. They may block:

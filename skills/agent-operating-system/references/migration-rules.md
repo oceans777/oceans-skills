@@ -10,7 +10,7 @@ files.
 - Protect existing user work.
 - Safety boundaries.
 - Default branch/worktree policy.
-- Required commit/push policy if the project has one.
+- Required commit policy and explicit authorization boundary for shared effects such as pushes, merges, publishing, and external messages.
 - Pointers to scripts, hooks, docs, and skills.
 
 ## Move To Path-Scoped Rules
@@ -58,6 +58,7 @@ Hooks should call scripts. They should not duplicate script logic.
 - Unproven preferences.
 - Personal thoughts that do not change future behavior.
 - Rules that duplicate stronger hooks or scripts.
+- Fixed prompt sections, step counts, or role descriptions that do not change the result.
 
 ## Migration Output Format
 

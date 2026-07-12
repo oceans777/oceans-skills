@@ -1,13 +1,13 @@
 ---
 name: agent-operating-system
-description: 'Use when a user wants to audit, bootstrap, migrate, dedupe, or operate a project using an eight-layer agent workflow with AGENTS.md, CLAUDE.md, local rules, skills, scripts, Git hooks, first-commit standards guards, worktrees, subagents, verification, commits, merges, and post-task learning capture.'
+description: 'Use when a user wants to audit, bootstrap, migrate, dedupe, or operate a project using an eight-layer agent workflow with AGENTS.md, CLAUDE.md, prompt governance, local rules, skills, scripts, Git hooks, first-commit standards guards, worktrees, subagents, verification, commits, merges, and post-task learning capture.'
 ---
 
 # Agent Operating System
 
 ## Overview
 
-Turn a project into an eight-layer agent operating system: thin startup rules, scoped local rules, reusable skills, executable checks, deterministic hooks, isolated worktrees, subagent orchestration, and post-task evaluation.
+Turn a project into an eight-layer agent operating system: thin startup rules, scoped local rules, reusable skills, executable checks, deterministic hooks, isolated worktrees, subagent orchestration, and post-task evaluation. Keep task prompts outcome-led and require explicit authorization for shared side effects.
 
 ## When To Use
 
@@ -36,6 +36,7 @@ Choose exactly one primary mode from the user's request:
 | `migrate` | "split this AGENTS", "lower the context load" | Move content into correct layers |
 | `install-global-guard` | "make every git commit check AGENTS", "install global hooks" | Install non-overwriting global Git hooks |
 | `dedupe` | "global and project AGENTS duplicate", "reduce token usage" | Duplicate report, no automatic deletion |
+| `prompt-governance` | "improve our task prompts", "replace rigid prompt templates" | Outcome/context/output/boundary/final-check rules and project template |
 | `start-task` | "start feature X", "new task branch" | Isolated worktree + branch plan |
 | `parallel-work` | "six features at once", "use subagents" | Worktree/subagent assignment matrix |
 | `finish-task` | "finish/merge/ship this task branch" | Verify, commit, push, merge, post-task triage |
@@ -50,6 +51,18 @@ Choose exactly one primary mode from the user's request:
 6. **Hooks**: mandatory pre/post actions that cannot rely on model memory.
 7. **Worktrees / subagents**: isolated execution lanes for parallel work and independent review.
 8. **Evaluation / learning**: post-task triage that decides what should be promoted, automated, or deleted.
+
+## Prompt Governance Flow
+
+Use `prompt-governance` when a repository's startup rules or reusable task templates prescribe long roles, fixed step counts, or unconditional tool use.
+
+1. Start with the observable result and audience.
+2. Add only context that can change the result.
+3. Specify output shape only when it affects usability.
+4. Keep one to three critical boundaries, especially shared side effects.
+5. Add a final check that can be verified.
+
+All five parts are optional. Do not replace one rigid formula with another. Read `references/prompting-rules.md` for audit criteria and migration guidance.
 
 ## Audit Flow
 
@@ -97,6 +110,7 @@ Created scaffold:
 - `.oceans/templates/AGENTS.template.md`
 - `.oceans/templates/CLAUDE.template.md`
 - `docs/agent/branch-workflow.md`
+- `docs/agent/prompting-workflow.md`
 - `docs/agent/project-reference.md`
 - `scripts/agent-bootstrap.ps1`
 - `scripts/agent-verify.ps1`
@@ -201,9 +215,9 @@ Before finishing a task branch:
 1. Stage only task-owned files.
 2. Run project verification, including `scripts/agent-verify.ps1` if present.
 3. Commit with the project's required message format.
-4. Push the task branch.
-5. Merge or open PR according to project policy.
-6. Push the development integration branch only when authorized by project rules.
+4. Push the task branch only when the current request authorizes a remote update.
+5. Merge or open a PR only when authorized by the user and project policy.
+6. Push the development integration branch only when the current request authorizes that shared side effect.
 7. Run proactive experience capture. The user does not need to know whether something is a "lesson" or "rule"; infer it from friction signals and use `experience-triage` logic only when there is a durable lesson.
 
 For detailed capture signals and output shape, read `references/proactive-experience-capture.md`.

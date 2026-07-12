@@ -138,6 +138,7 @@ if ($RequireClaude) {
 Copy-TemplateIfMissing 'AGENTS.template.md' (Join-Path $repoRoot '.oceans/templates/AGENTS.template.md')
 Copy-TemplateIfMissing 'CLAUDE.template.md' (Join-Path $repoRoot '.oceans/templates/CLAUDE.template.md')
 Copy-TemplateIfMissing 'branch-workflow.template.md' (Join-Path $repoRoot 'docs/agent/branch-workflow.md')
+Copy-TemplateIfMissing 'prompting-workflow.template.md' (Join-Path $repoRoot 'docs/agent/prompting-workflow.md')
 Copy-TemplateIfMissing 'project-reference.template.md' (Join-Path $repoRoot 'docs/agent/project-reference.md')
 Copy-TemplateIfMissing 'agent-bootstrap.template.ps1' (Join-Path $repoRoot 'scripts/agent-bootstrap.ps1')
 Copy-TemplateIfMissing 'agent-verify.template.ps1' (Join-Path $repoRoot 'scripts/agent-verify.ps1')

@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$TaskName,
     [string]$ProjectRoot = (Get-Location).Path,
-    [string]$BaselineBranch = 'dev',
+    [string]$BaselineBranch = '',
     [string]$TaskPrefix = 'codex',
     [string]$WorktreeDir = '.worktrees',
     [string]$BranchName = '',
@@ -108,6 +108,16 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($repoRoot)) {
 $repoRoot = $repoRoot.Trim()
 Set-Location $repoRoot
 
+if ([string]::IsNullOrWhiteSpace($BaselineBranch)) {
+    $currentBranch = (& git branch --show-current 2>$null)
+    if ($null -ne $currentBranch) {
+        $BaselineBranch = $currentBranch.ToString().Trim()
+    }
+}
+if ([string]::IsNullOrWhiteSpace($BaselineBranch)) {
+    throw 'Could not detect a task source branch. Pass -BaselineBranch.'
+}
+
 $slug = Get-TaskSlug $TaskName
 if ([string]::IsNullOrWhiteSpace($BranchName)) {
     $BranchName = "$TaskPrefix/$slug"
@@ -186,4 +196,4 @@ Write-Host 'Next steps:'
 Write-Host "  Set-Location '$worktreePath'"
 Write-Host '  implement only this task'
 Write-Host '  stage only task-owned files'
-Write-Host '  verify, commit, push, then merge by project policy'
+Write-Host '  verify, commit, and share only as authorized'

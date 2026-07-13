@@ -198,14 +198,14 @@ Use worktrees when:
 When starting a task branch, prefer the bundled script:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File <skill-dir>/scripts/start-agent-task.ps1 -ProjectRoot <repo> -TaskName "<task>" -BaselineBranch dev -TaskPrefix codex -EnsureIgnore
+powershell -NoProfile -ExecutionPolicy Bypass -File <skill-dir>/scripts/start-agent-task.ps1 -ProjectRoot <repo> -TaskName "<task>" -TaskPrefix codex -EnsureIgnore
 ```
 
 ```sh
-sh <skill-dir>/scripts/start-agent-task.sh --project-root <repo> --task-name "<task>" --baseline-branch dev --task-prefix codex --ensure-ignore
+sh <skill-dir>/scripts/start-agent-task.sh --project-root <repo> --task-name "<task>" --task-prefix codex --ensure-ignore
 ```
 
-The task-start script keeps its `-BaselineBranch` parameter for compatibility; pass the project's development integration branch, usually `dev`, so the task worktree starts from the branch that will receive the merge. It refuses to reuse an existing branch or worktree path.
+The task-start scripts use the current branch as the source by default. Pass `-BaselineBranch` or `--baseline-branch` explicitly when the current checkout is not the branch that should receive the task. They refuse to reuse an existing branch or worktree path.
 
 Use subagents only when tasks are independent and the user has asked for subagent or parallel work. Give each subagent a distinct worktree, branch, file ownership, verification command, and merge target. Tell each subagent that other work may exist and it must not revert unrelated changes.
 

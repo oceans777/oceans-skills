@@ -38,11 +38,11 @@ Recommended local paths:
 Prefer the bundled script when creating a new task lane:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File <skill-dir>/scripts/start-agent-task.ps1 -ProjectRoot <repo> -TaskName "<task>" -BaselineBranch dev -TaskPrefix codex -EnsureIgnore
+powershell -NoProfile -ExecutionPolicy Bypass -File <skill-dir>/scripts/start-agent-task.ps1 -ProjectRoot <repo> -TaskName "<task>" -TaskPrefix codex -EnsureIgnore
 ```
 
 ```sh
-sh <skill-dir>/scripts/start-agent-task.sh --project-root <repo> --task-name "<task>" --baseline-branch <integration-branch> --task-prefix codex --ensure-ignore
+sh <skill-dir>/scripts/start-agent-task.sh --project-root <repo> --task-name "<task>" --task-prefix codex --ensure-ignore
 ```
 
 The script:

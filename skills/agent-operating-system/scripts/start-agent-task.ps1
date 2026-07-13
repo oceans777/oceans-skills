@@ -12,6 +12,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$OriginalLocation = (Get-Location).Path
 
 function Info($message) {
     Write-Host "[INFO] $message" -ForegroundColor Cyan
@@ -116,6 +117,7 @@ function Append-LineIfMissing($path, $line) {
     }
 }
 
+try {
 if (-not (Test-Path -LiteralPath $ProjectRoot -PathType Container)) {
     throw "ProjectRoot not found: $ProjectRoot"
 }
@@ -263,3 +265,6 @@ Write-Host "  Set-Location '$worktreePath'"
 Write-Host '  implement only this task'
 Write-Host '  stage only task-owned files'
 Write-Host '  verify, commit, and share only as authorized'
+} finally {
+    Set-Location $OriginalLocation
+}

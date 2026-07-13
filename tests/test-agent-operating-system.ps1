@@ -10,6 +10,7 @@ function Run-Git([string[]]$Arguments) {
 }
 
 try {
+    $CallerLocation = (Get-Location).Path
     $Project = Join-Path $TestRoot 'project'
     Run-Git @('init', '-b', 'main', $Project)
     Run-Git @('-C', $Project, 'config', 'user.name', 'AOS Test')
@@ -19,6 +20,7 @@ try {
     Run-Git @('-C', $Project, 'commit', '-m', 'test: initialize')
 
     & (Join-Path $AosRoot 'scripts\bootstrap-agent-os.ps1') -ProjectRoot $Project
+    if ((Get-Location).Path -ne $CallerLocation) { throw 'Bootstrap changed the caller working directory.' }
     if (-not (Test-Path -LiteralPath (Join-Path $Project 'AGENTS.md'))) {
         throw 'Bootstrap did not create AGENTS.md.'
     }
@@ -42,6 +44,7 @@ try {
 
     & (Join-Path $AosRoot 'scripts\start-agent-task.ps1') -ProjectRoot $Project `
       -TaskName valid -BranchName 'codex/valid' -WorktreeDir '.worktrees' -EnsureIgnore -NoFetch
+    if ((Get-Location).Path -ne $CallerLocation) { throw 'Task setup changed the caller working directory.' }
     if (-not (Test-Path -LiteralPath (Join-Path $Project '.worktrees\valid'))) {
         throw 'Expected worktree was not created.'
     }

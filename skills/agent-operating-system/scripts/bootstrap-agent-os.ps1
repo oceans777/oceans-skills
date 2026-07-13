@@ -10,6 +10,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$OriginalLocation = (Get-Location).Path
 
 function Info($message) {
     Write-Host "[INFO] $message" -ForegroundColor Cyan
@@ -107,6 +108,7 @@ function Append-LineIfMissing($path, $line) {
     }
 }
 
+try {
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $skillDir = Split-Path -Parent $scriptDir
 $assetsDir = Join-Path $skillDir 'assets'
@@ -224,3 +226,6 @@ if ($EnableHooks) {
 }
 
 Info 'Bootstrap complete. Review existing files before migrating content.'
+} finally {
+    Set-Location $OriginalLocation
+}

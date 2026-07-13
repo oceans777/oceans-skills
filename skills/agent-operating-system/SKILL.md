@@ -139,27 +139,21 @@ silently. Use `--chain-existing` only when the user wants oceans777 checks to
 run before the existing global hooks, or `--force` when they explicitly accept
 replacement.
 
-The global guard calls `scripts/agent-standards-hook.sh`. On the first guarded
-commit per repository it:
-
-1. Creates missing `AGENTS.md` from `assets/AGENTS.template.md`.
-2. Creates missing `CLAUDE.md` only when `.oceans/agent-standards.conf` sets
-   `require_claude_md=1`.
-3. Never overwrites existing `AGENTS.md` or `CLAUDE.md`.
-4. Opens existing or newly created docs with Cursor, VS Code, macOS `open`, or
-   `xdg-open` when available.
-5. Blocks once so the user reviews and stages required docs.
-6. Stores the local reviewed marker inside Git's private state via
-   `git rev-parse --git-path oceans-agent-standards-state`, not in the working
-   tree.
+The global guard calls `scripts/agent-standards-hook.sh`. It is deliberately
+read-only: it checks whether required agent documents exist and are tracked,
+checks staged whitespace, and validates commit-message format. It never creates
+project files, writes review markers, launches an editor, or calls an LLM.
+Missing documents are repaired only through an explicit `bootstrap` invocation,
+where the generated files can be reviewed before they enter the repository.
 
 Hook checks must stay deterministic. Do not call an LLM from a Git hook. For
 AI-assisted tailoring, inspect the repository and edit `AGENTS.md` /
 `CLAUDE.md` explicitly in response to the user request.
 
-`install-global-hooks.sh` installs a self-contained copy of the guard and its
-templates under the user's Git hook config directory, so commits do not depend
-on the current clone path remaining unchanged.
+`install-global-hooks.sh` installs a self-contained copy of the guard under the
+user's Git hook config directory, so commits do not depend on the current clone
+path remaining unchanged. The installer prepares a complete replacement first
+and rolls back the previous hook directory if activation fails.
 
 ## Dedupe Flow
 

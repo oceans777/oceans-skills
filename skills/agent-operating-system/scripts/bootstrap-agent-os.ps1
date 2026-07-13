@@ -94,8 +94,8 @@ function Copy-FileIfMissing($sourcePath, $targetPath) {
 
 function Append-LineIfMissing($path, $line) {
     if (Test-Path -LiteralPath $path -PathType Leaf) {
-        $content = Get-Content -LiteralPath $path -Raw -Encoding UTF8
-        if ($content -match [regex]::Escape($line)) {
+        $lines = @(Get-Content -LiteralPath $path -Encoding UTF8)
+        if ($lines -contains $line) {
             Exists "$path contains '$line'"
             return
         }
@@ -140,6 +140,34 @@ if ([string]::IsNullOrWhiteSpace($DevBranch)) {
 if ([string]::IsNullOrWhiteSpace($BaselineBranch) -or [string]::IsNullOrWhiteSpace($DevBranch)) {
     throw 'Could not detect branch policy. Pass -BaselineBranch and -DevBranch explicitly.'
 }
+foreach ($branchValue in @($BaselineBranch, $DevBranch, "$TaskPrefix/bootstrap-check")) {
+    & git check-ref-format --branch $branchValue 1>$null 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Invalid branch policy value: $branchValue"
+    }
+}
+if ($WorktreeDir.IndexOfAny([char[]](0..31)) -ge 0) {
+    throw 'Worktree directory must not contain control characters.'
+}
+if ($UseLocalWorktrees) {
+    if ([System.IO.Path]::IsPathRooted($WorktreeDir)) {
+        throw '-UseLocalWorktrees requires a relative directory contained inside the repository.'
+    }
+    $candidateWorktree = [System.IO.Path]::GetFullPath((Join-Path $repoRoot $WorktreeDir))
+    $repoPrefix = [System.IO.Path]::GetFullPath($repoRoot)
+    if (-not $repoPrefix.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
+        $repoPrefix += [System.IO.Path]::DirectorySeparatorChar
+    }
+    if (-not $candidateWorktree.StartsWith($repoPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw '-UseLocalWorktrees refuses a path outside the repository.'
+    }
+    if (Test-Path -LiteralPath $candidateWorktree) {
+        $candidateWorktree = [System.IO.Path]::GetFullPath((Resolve-Path -LiteralPath $candidateWorktree).Path)
+        if (-not $candidateWorktree.StartsWith($repoPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw '-UseLocalWorktrees refuses a path that resolves outside the repository.'
+        }
+    }
+}
 Info "Branch defaults: baseline=$BaselineBranch integration=$DevBranch"
 
 Ensure-Directory (Join-Path $repoRoot 'docs')
@@ -172,8 +200,8 @@ Append-LineIfMissing (Join-Path $repoRoot '.gitattributes') '.githooks/* text eo
 Append-LineIfMissing (Join-Path $repoRoot '.gitattributes') 'scripts/*.sh text eol=lf'
 
 if ($UseLocalWorktrees) {
-    Append-LineIfMissing (Join-Path $repoRoot '.gitignore') "$WorktreeDir/"
     Ensure-Directory (Join-Path $repoRoot $WorktreeDir)
+    Append-LineIfMissing (Join-Path $repoRoot '.gitignore') "$WorktreeDir/"
 }
 
 if ($IsLinux -or $IsMacOS) {

@@ -63,6 +63,10 @@ if [ -z "$BASELINE_BRANCH" ]; then
   echo 'Could not detect a task source branch. Pass --baseline-branch.' >&2
   exit 1
 fi
+if ! git check-ref-format --branch "$BASELINE_BRANCH" >/dev/null 2>&1; then
+  echo "Invalid baseline branch: $BASELINE_BRANCH" >&2
+  exit 1
+fi
 
 slug=$(printf '%s' "$TASK_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9][^a-z0-9]*/-/g; s/^-//; s/-$//' | cut -c1-48 | sed 's/-$//')
 if [ -z "$slug" ]; then
@@ -70,6 +74,11 @@ if [ -z "$slug" ]; then
 fi
 if [ -z "$BRANCH_NAME" ]; then
   BRANCH_NAME=$TASK_PREFIX/$slug
+fi
+
+if ! git check-ref-format --branch "$BRANCH_NAME" >/dev/null 2>&1; then
+  echo "Invalid branch name: $BRANCH_NAME" >&2
+  exit 1
 fi
 
 if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
@@ -114,14 +123,26 @@ case "$WORKTREE_DIR" in
   *) worktree_root=$repo_root/$WORKTREE_DIR; relative_worktree=1 ;;
 esac
 
-if [ "$ENSURE_IGNORE" -eq 1 ] && [ "$relative_worktree" -eq 1 ]; then
-  ignore_line=${WORKTREE_DIR%/}/
-  if [ ! -f .gitignore ] || ! grep -Fxq "$ignore_line" .gitignore; then
-    printf '%s\n' "$ignore_line" >> .gitignore
+worktree_root_existed=0
+[ -d "$worktree_root" ] && worktree_root_existed=1
+mkdir -p "$worktree_root"
+worktree_root=$(CDPATH= cd "$worktree_root" && pwd -P)
+worktree_inside_repo=0
+case "$worktree_root" in "$repo_root"/*) worktree_inside_repo=1 ;; esac
+
+if [ "$ENSURE_IGNORE" -eq 1 ]; then
+  if [ "$relative_worktree" -ne 1 ] || [ "$worktree_inside_repo" -ne 1 ]; then
+    [ "$worktree_root_existed" -eq 1 ] || rmdir "$worktree_root" 2>/dev/null || true
+    echo '--ensure-ignore only supports a worktree directory contained inside the repository.' >&2
+    exit 1
+  fi
+  if [ -L .gitignore ] || { [ -e .gitignore ] && [ ! -f .gitignore ]; }; then
+    [ "$worktree_root_existed" -eq 1 ] || rmdir "$worktree_root" 2>/dev/null || true
+    echo 'Refusing to modify a symlink or non-file .gitignore.' >&2
+    exit 1
   fi
 fi
 
-mkdir -p "$worktree_root"
 worktree_path=$worktree_root/$slug
 if [ -e "$worktree_path" ]; then
   echo "Worktree path already exists: $worktree_path" >&2
@@ -129,7 +150,54 @@ if [ -e "$worktree_path" ]; then
 fi
 
 printf '[INFO] Creating branch %s from %s\n' "$BRANCH_NAME" "$baseline_ref"
-git worktree add -b "$BRANCH_NAME" "$worktree_path" "$baseline_ref"
+if ! git worktree add -b "$BRANCH_NAME" "$worktree_path" "$baseline_ref"; then
+  [ "$worktree_root_existed" -eq 1 ] || rmdir "$worktree_root" 2>/dev/null || true
+  echo 'Failed to create task worktree; no ignore rule was changed.' >&2
+  exit 1
+fi
+
+if [ "$ENSURE_IGNORE" -eq 1 ]; then
+  relative_canonical=${worktree_root#"$repo_root"/}
+  ignore_line=${relative_canonical%/}/
+  if ! { [ -f .gitignore ] && grep -Fxq "$ignore_line" .gitignore; }; then
+    ignore_staging=$(mktemp "$repo_root/.gitignore.oceans-stage.XXXXXX") || {
+      git worktree remove --force "$worktree_path" >/dev/null 2>&1 || true
+      git branch -D "$BRANCH_NAME" >/dev/null 2>&1 || true
+      echo 'Failed to prepare .gitignore update; task worktree and branch were rolled back.' >&2
+      exit 1
+    }
+    ignore_prepare_failed=0
+    if [ -f .gitignore ]; then
+      if ! cp -p .gitignore "$ignore_staging"; then
+        ignore_prepare_failed=1
+      else
+        last_byte=$(tail -c 1 .gitignore 2>/dev/null || true)
+        if [ -s .gitignore ] && [ -n "$last_byte" ] && ! printf '\n' >> "$ignore_staging"; then
+          ignore_prepare_failed=1
+        fi
+      fi
+    fi
+    if [ "$ignore_prepare_failed" -eq 0 ] && ! printf '%s\n' "$ignore_line" >> "$ignore_staging"; then
+      ignore_prepare_failed=1
+    fi
+    if [ "$ignore_prepare_failed" -ne 0 ]; then
+      rm -f "$ignore_staging"
+      git worktree remove --force "$worktree_path" >/dev/null 2>&1 || true
+      git branch -D "$BRANCH_NAME" >/dev/null 2>&1 || true
+      [ "$worktree_root_existed" -eq 1 ] || rmdir "$worktree_root" 2>/dev/null || true
+      echo 'Failed to prepare .gitignore update; task worktree and branch were rolled back.' >&2
+      exit 1
+    fi
+    if ! mv "$ignore_staging" .gitignore; then
+      rm -f "$ignore_staging"
+      git worktree remove --force "$worktree_path" >/dev/null 2>&1 || true
+      git branch -D "$BRANCH_NAME" >/dev/null 2>&1 || true
+      [ "$worktree_root_existed" -eq 1 ] || rmdir "$worktree_root" 2>/dev/null || true
+      echo 'Failed to update .gitignore; task worktree and branch were rolled back.' >&2
+      exit 1
+    fi
+  fi
+fi
 
 printf '[READY] Task worktree created\n'
 printf 'Task: %s\nBranch: %s\nBaseline: %s\nWorktree: %s\n' "$TASK_NAME" "$BRANCH_NAME" "$baseline_ref" "$worktree_path"

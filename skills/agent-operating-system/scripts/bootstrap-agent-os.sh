@@ -115,6 +115,36 @@ if [ -z "$BASELINE_BRANCH" ] || [ -z "$DEV_BRANCH" ]; then
   echo 'Could not detect branch policy. Pass --baseline-branch and --dev-branch explicitly.' >&2
   exit 1
 fi
+for branch_value in "$BASELINE_BRANCH" "$DEV_BRANCH" "$TASK_PREFIX/bootstrap-check"; do
+  if ! git check-ref-format --branch "$branch_value" >/dev/null 2>&1; then
+    echo "Invalid branch policy value: $branch_value" >&2
+    exit 1
+  fi
+done
+
+if printf '%s' "$WORKTREE_DIR" | LC_ALL=C grep -q '[[:cntrl:]]'; then
+  echo 'Worktree directory must not contain control characters.' >&2
+  exit 1
+fi
+
+if [ "$USE_LOCAL_WORKTREES" -eq 1 ]; then
+  case "$WORKTREE_DIR" in
+    /*|''|.|..|../*|*/../*|*/..)
+      echo '--use-local-worktrees requires a relative directory contained inside the repository.' >&2
+      exit 1
+      ;;
+  esac
+  if [ -e "$repo_root/$WORKTREE_DIR" ]; then
+    resolved_worktree=$(CDPATH= cd "$repo_root/$WORKTREE_DIR" 2>/dev/null && pwd -P || true)
+    case "$resolved_worktree" in
+      "$repo_root"/*) ;;
+      *)
+        echo '--use-local-worktrees refuses a path that resolves outside the repository.' >&2
+        exit 1
+        ;;
+    esac
+  fi
+fi
 info "Branch defaults: baseline=$BASELINE_BRANCH integration=$DEV_BRANCH"
 
 ensure_dir() {
@@ -136,13 +166,19 @@ render_template() {
     -v task_prefix="$TASK_PREFIX" \
     -v worktree_dir="$WORKTREE_DIR" \
     -v require_claude="$REQUIRE_CLAUDE" '
+      function replace_literal(text, token, value, pos) {
+        while ((pos = index(text, token)) > 0) {
+          text = substr(text, 1, pos - 1) value substr(text, pos + length(token))
+        }
+        return text
+      }
       {
-        gsub(/\{\{BASE_BRANCH\}\}/, baseline)
-        gsub(/\{\{DEV_BRANCH\}\}/, dev_branch)
-        gsub(/\{\{TASK_PREFIX\}\}/, task_prefix)
-        gsub(/\{\{WORKTREE_DIR\}\}/, worktree_dir)
-        gsub(/\{\{REQUIRE_CLAUDE_MD\}\}/, require_claude)
-        print
+        line = replace_literal($0, "{{BASE_BRANCH}}", baseline)
+        line = replace_literal(line, "{{DEV_BRANCH}}", dev_branch)
+        line = replace_literal(line, "{{TASK_PREFIX}}", task_prefix)
+        line = replace_literal(line, "{{WORKTREE_DIR}}", worktree_dir)
+        line = replace_literal(line, "{{REQUIRE_CLAUDE_MD}}", require_claude)
+        print line
       }
     ' "$template" > "$target"
 }
@@ -230,8 +266,8 @@ append_line_if_missing .gitattributes '.githooks/* text eol=lf'
 append_line_if_missing .gitattributes 'scripts/*.sh text eol=lf'
 
 if [ "$USE_LOCAL_WORKTREES" -eq 1 ]; then
-  append_line_if_missing .gitignore "$WORKTREE_DIR/"
   ensure_dir "$WORKTREE_DIR"
+  append_line_if_missing .gitignore "$WORKTREE_DIR/"
 fi
 
 if [ "$ENABLE_HOOKS" -eq 1 ]; then

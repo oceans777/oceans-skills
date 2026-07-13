@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  shell:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check skill structure
+        run: |
+          for skill in skills/*; do
+            test -f "$skill/SKILL.md"
+          done
+      - name: Run Shell tests
+        run: sh tests/test-agent-operating-system.sh
+
+  powershell:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check skill structure
+        shell: pwsh
+        run: Get-ChildItem skills -Directory | ForEach-Object { if (-not (Test-Path (Join-Path $_.FullName 'SKILL.md'))) { throw "Missing SKILL.md: $($_.Name)" } }
+      - name: Run PowerShell tests
+        shell: pwsh
+        run: .\tests\test-agent-operating-system.ps1

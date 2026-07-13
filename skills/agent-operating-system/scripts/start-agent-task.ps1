@@ -86,13 +86,33 @@ function Get-TaskSlug($name) {
 
 function Append-LineIfMissing($path, $line) {
     if (Test-Path -LiteralPath $path -PathType Leaf) {
-        $content = Get-Content -LiteralPath $path -Raw -Encoding UTF8
-        if ($content -match [regex]::Escape($line)) {
+        $lines = @(Get-Content -LiteralPath $path -Encoding UTF8)
+        if ($lines -contains $line) {
             return
         }
-        Add-Content -LiteralPath $path -Value $line -Encoding UTF8
-    } else {
-        Set-Content -LiteralPath $path -Value $line -Encoding UTF8
+    }
+
+    $parent = Split-Path -Parent $path
+    $stagingPath = Join-Path $parent ('.gitignore.oceans-stage.' + [Guid]::NewGuid().ToString('N'))
+    try {
+        if (Test-Path -LiteralPath $path -PathType Leaf) {
+            Copy-Item -LiteralPath $path -Destination $stagingPath
+        } else {
+            [System.IO.File]::WriteAllBytes($stagingPath, [byte[]]@())
+        }
+        $existingBytes = [System.IO.File]::ReadAllBytes($stagingPath)
+        $prefix = if ($existingBytes.Length -gt 0 -and $existingBytes[$existingBytes.Length - 1] -ne 10) { [Environment]::NewLine } else { '' }
+        $encoding = New-Object System.Text.UTF8Encoding($false)
+        $appendBytes = $encoding.GetBytes($prefix + $line + [Environment]::NewLine)
+        $stream = [System.IO.File]::Open($stagingPath, [System.IO.FileMode]::Append, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+        try { $stream.Write($appendBytes, 0, $appendBytes.Length) } finally { $stream.Dispose() }
+        if (Test-Path -LiteralPath $path -PathType Leaf) {
+            [System.IO.File]::Replace($stagingPath, $path, $null)
+        } else {
+            Move-Item -LiteralPath $stagingPath -Destination $path
+        }
+    } finally {
+        if (Test-Path -LiteralPath $stagingPath) { Remove-Item -LiteralPath $stagingPath -Force }
     }
 }
 
@@ -117,10 +137,19 @@ if ([string]::IsNullOrWhiteSpace($BaselineBranch)) {
 if ([string]::IsNullOrWhiteSpace($BaselineBranch)) {
     throw 'Could not detect a task source branch. Pass -BaselineBranch.'
 }
+& git check-ref-format --branch $BaselineBranch 1>$null 2>$null
+if ($LASTEXITCODE -ne 0) {
+    throw "Invalid baseline branch: $BaselineBranch"
+}
 
 $slug = Get-TaskSlug $TaskName
 if ([string]::IsNullOrWhiteSpace($BranchName)) {
     $BranchName = "$TaskPrefix/$slug"
+}
+
+& git check-ref-format --branch $BranchName 1>$null 2>$null
+if ($LASTEXITCODE -ne 0) {
+    throw "Invalid branch name: $BranchName"
 }
 
 if (Test-LocalBranch $BranchName) {
@@ -165,12 +194,31 @@ if ([System.IO.Path]::IsPathRooted($WorktreeDir)) {
     $worktreeRoot = Join-Path $repoRoot $WorktreeDir
 }
 
-if ($EnsureIgnore -and -not [System.IO.Path]::IsPathRooted($WorktreeDir)) {
-    Append-LineIfMissing (Join-Path $repoRoot '.gitignore') "$WorktreeDir/"
-}
-
+$worktreeRootExisted = Test-Path -LiteralPath $worktreeRoot -PathType Container
 if (-not (Test-Path -LiteralPath $worktreeRoot -PathType Container)) {
     New-Item -ItemType Directory -Path $worktreeRoot -Force | Out-Null
+}
+$worktreeRoot = [System.IO.Path]::GetFullPath((Resolve-Path -LiteralPath $worktreeRoot).Path)
+$repoPrefix = [System.IO.Path]::GetFullPath($repoRoot)
+if (-not $repoPrefix.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
+    $repoPrefix += [System.IO.Path]::DirectorySeparatorChar
+}
+$worktreeInsideRepo = $worktreeRoot.StartsWith($repoPrefix, [System.StringComparison]::OrdinalIgnoreCase)
+
+$gitIgnorePath = Join-Path $repoRoot '.gitignore'
+if ($EnsureIgnore) {
+    if ([System.IO.Path]::IsPathRooted($WorktreeDir) -or -not $worktreeInsideRepo) {
+        if (-not $worktreeRootExisted) { Remove-Item -LiteralPath $worktreeRoot -ErrorAction SilentlyContinue }
+        throw '-EnsureIgnore only supports a worktree directory contained inside the repository.'
+    }
+    if (Test-Path -LiteralPath $gitIgnorePath) {
+        $gitIgnoreItem = Get-Item -LiteralPath $gitIgnorePath -Force
+        if ($gitIgnoreItem.PSIsContainer -or
+            ($gitIgnoreItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            if (-not $worktreeRootExisted) { Remove-Item -LiteralPath $worktreeRoot -ErrorAction SilentlyContinue }
+            throw 'Refusing to modify a reparse point or non-file .gitignore.'
+        }
+    }
 }
 
 $worktreePath = Join-Path $worktreeRoot $slug
@@ -179,7 +227,25 @@ if (Test-Path -LiteralPath $worktreePath) {
 }
 
 Info "Creating branch $BranchName from $baselineRef"
-Run-Git @('worktree', 'add', '-b', $BranchName, $worktreePath, $baselineRef)
+try {
+    Run-Git @('worktree', 'add', '-b', $BranchName, $worktreePath, $baselineRef)
+} catch {
+    if (-not $worktreeRootExisted) { Remove-Item -LiteralPath $worktreeRoot -ErrorAction SilentlyContinue }
+    throw 'Failed to create task worktree; no ignore rule was changed.'
+}
+
+if ($EnsureIgnore) {
+    $relativeCanonical = $worktreeRoot.Substring($repoPrefix.Length).Replace('\', '/')
+    $ignoreLine = "$($relativeCanonical.TrimEnd('/'))/"
+    try {
+        Append-LineIfMissing $gitIgnorePath $ignoreLine
+    } catch {
+        & git worktree remove --force $worktreePath 1>$null 2>$null
+        & git branch -D $BranchName 1>$null 2>$null
+        if (-not $worktreeRootExisted) { Remove-Item -LiteralPath $worktreeRoot -ErrorAction SilentlyContinue }
+        throw 'Failed to update .gitignore; task worktree and branch were rolled back.'
+    }
+}
 
 Ready "Task worktree created"
 Write-Host "Task: $TaskName"

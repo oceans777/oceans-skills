@@ -1,6 +1,6 @@
 ---
 name: experience-triage
-description: "Use when a user wants to preserve a lesson, pitfall, rule, workflow, or agent behavior after real work and asks where it belongs: AGENTS.md/CLAUDE.md, directory rules, a skill, script/MCP tool, hook, memory, or no durable record. Triggers include \"\u8fd9\u6b21\u5b66\u5230\u7684\", \"\u8e29\u5751\u6c89\u6dc0\", \"\u89c4\u5219\u8be5\u5199\u5230\u54ea\", and \"\u65b0\u6d41\u7a0b\u653e\u54ea\"."
+description: 'Use when a user wants to preserve a lesson, pitfall, rule, workflow, or agent behavior after real work and asks where it belongs: AGENTS.md/CLAUDE.md, directory rules, a skill, script/MCP tool, hook, memory, or no durable record. Triggers include "这次学到的", "踩坑沉淀", "规则该写到哪", and "新流程放哪".'
 ---
 
 # Experience Triage
@@ -13,7 +13,7 @@ Classify a new agent-work lesson into the right persistence layer. Optimize for 
 
 1. Restate the lesson in one concrete sentence.
 2. If the lesson is vague, ask only the minimum clarifying question needed to classify it.
-3. Run the decision tree in order; the first matching layer usually wins.
+3. Classify both the lesson's scope and its execution mechanism. These are separate decisions and may produce a combined answer.
 4. Give a directly usable draft for the recommended layer.
 5. Mention when the lesson should later be promoted, demoted, automated, or deleted.
 
@@ -25,24 +25,34 @@ Use these questions in order:
 Yes -> Do not persist it. Explain why.  
 No -> Q1.
 
-**Q1: Must this happen every time, with zero exceptions and no reliance on model memory?**  
-Yes -> Recommend a `hook` or another deterministic guard.  
-No -> Q2.
+**Q1: What is the scope?**
 
-**Q2: Does it require executing commands, querying APIs, inspecting data, or performing repeatable mechanical checks?**  
-Yes -> Recommend a `script`, CLI command, MCP tool, or automation, then reference it from the relevant rule or skill.  
-No -> Q3.
+- Cross-project personal/team preference -> user-level memory or rule.
+- Whole repository -> repository guidance or repository skill/tool.
+- Directory, file type, module, plugin, or subsystem -> local routing guidance near that path, while keeping detailed workflows or tools in a skill/script.
 
-**Q3: Does it apply only to a directory, file type, module, plugin, template family, or subsystem?**  
-Yes -> Recommend a nested `AGENTS.md`/`CLAUDE.md` or path-scoped rule near that code.  
+Scope decides where the entry point lives. It does not decide whether the implementation is prose, a skill, a script, or a hook.
+
+**Q2: Is the behavior mechanically decidable and repeatable?**
+
+Yes -> Recommend a `script`, CLI command, MCP tool, or automation, then continue to Q3 to decide whether a hook should invoke it.
+
+No -> Skip Q3 and continue to Q4.
+
+**Q3: Is it tied to a deterministic lifecycle event and required every time?**
+
+Yes -> Recommend a `hook` that calls the mechanical check. A hook is appropriate only when pass/fail can be determined without subjective judgment.
+
 No -> Q4.
 
 **Q4: Is it a multi-step workflow, checklist, review flow, or branching decision process?**  
-Yes -> Recommend a new or updated `skill`.  
+Yes -> Recommend a new or updated `skill`. If it is path-scoped, add only a short local routing rule that points to the skill.
+
 No -> Q5.
 
 **Q5: Should every session in this project know it as a default behavior, map, or hard constraint?**  
-Yes -> Recommend top-level `AGENTS.md` or `CLAUDE.md`. Keep it concise; if the file is already long, suggest moving detailed procedure into a skill.  
+Yes -> Recommend top-level `AGENTS.md` or `CLAUDE.md`. Keep it concise and judgment-oriented; do not claim a hook can enforce it unless Q2 and Q3 both passed.
+
 No -> Q6.
 
 **Q6: Is it a stable personal or team preference that applies across projects?**  
@@ -52,10 +62,10 @@ No -> Do not persist it yet; wait for another real occurrence.
 ## Layer Guide
 
 - `AGENTS.md` / `CLAUDE.md`: high-frequency project defaults, repository map, safety rules, collaboration rules, verification gates.
-- Nested rules: local constraints for one directory, module, plugin, template set, or file type.
+- Nested rules: concise local constraints or routing for one directory, module, plugin, template set, or file type. Keep detailed procedures in skills or scripts.
 - `skill`: reusable judgment-heavy process with steps, branches, examples, and checks.
 - `script` / CLI / MCP tool: deterministic execution, data retrieval, validation, transformation, or repeatable checks.
-- `hook`: mandatory pre/post action that must run even when the model forgets.
+- `hook`: mechanically decidable pre/post action bound to a lifecycle event; hooks must not make subjective decisions.
 - Memory / user rule: stable cross-project preference, not repository-specific.
 - No persistence: one-off discoveries, temporary debugging details, personal notes, or rules that would create noise.
 

@@ -140,7 +140,7 @@ fi
 
 if [ -z "$branch" ]; then
   fail '常规 agent 工作不允许处于 detached HEAD 状态。'
-elif [ "$branch" = "$BASELINE_BRANCH" ] && [ "$ALLOW_BASELINE_BRANCH" -ne 1 ] && [ "$merge_in_progress" -ne 1 ]; then
+elif [ "$BASELINE_BRANCH" != "$DEV_BRANCH" ] && [ "$branch" = "$BASELINE_BRANCH" ] && [ "$ALLOW_BASELINE_BRANCH" -ne 1 ] && [ "$merge_in_progress" -ne 1 ]; then
   fail "当前位于 $BASELINE_BRANCH。请使用 $DEV_BRANCH 或 $TASK_PREFIX/<task-name> 分支，或在明确维护基线时传入 --allow-baseline-branch。"
 elif [ "$branch" = "$DEV_BRANCH" ]; then
   pass "开发分支规则：$branch"

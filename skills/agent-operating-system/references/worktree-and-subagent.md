@@ -8,7 +8,7 @@ Use this mapping for parallel agentic development:
 one task = one branch = one worktree = optional one implementer subagent
 ```
 
-The coordination checkout should remain clean and on the project-defined integration branch, usually `dev`. Treat protected branches such as `main` as baselines unless the project says otherwise.
+The coordination checkout should remain clean and on the project-defined task source or integration branch. Detect branch policy from the repository; do not assume every project uses `main` plus `dev`.
 
 ## Worktree Creation Policy
 
@@ -39,6 +39,10 @@ Prefer the bundled script when creating a new task lane:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File <skill-dir>/scripts/start-agent-task.ps1 -ProjectRoot <repo> -TaskName "<task>" -BaselineBranch dev -TaskPrefix codex -EnsureIgnore
+```
+
+```sh
+sh <skill-dir>/scripts/start-agent-task.sh --project-root <repo> --task-name "<task>" --baseline-branch <integration-branch> --task-prefix codex --ensure-ignore
 ```
 
 The script:

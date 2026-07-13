@@ -21,15 +21,16 @@ Run a light triage pass when any of these appear:
 
 ## Classification
 
-Use this order:
+Classify two dimensions:
 
-1. Must happen every time with no exception -> hook.
-2. Can be mechanically checked or generated -> script/tool.
-3. Applies only to one path, module, plugin, template, or file type -> local rule.
-4. Requires judgment, branching, or multiple steps -> skill.
-5. Every session in this repository must know it -> top-level `AGENTS.md`.
-6. Applies across projects as a stable preference -> memory or user-level rule.
-7. Is temporary, speculative, private, or one-off -> no durable record.
+1. Scope: cross-project, whole repository, or path-scoped. Scope decides where
+   the entry point or routing rule lives.
+2. Mechanism: mechanically decidable -> script/tool; mechanically decidable and
+   tied to a required lifecycle event -> hook; judgment/branching/multiple steps
+   -> skill; always-needed project context -> top-level `AGENTS.md`.
+3. Combine layers when needed. A path-scoped workflow can use a local routing
+   rule plus a skill. A hook should call a script.
+4. If temporary, speculative, private, or one-off -> no durable record.
 
 ## Output Shape
 

@@ -6,7 +6,7 @@
 - 开发分支：`{{DEV_BRANCH}}`
 - 任务分支前缀：`{{TASK_PREFIX}}/`
 - linked worktree 目录：`{{WORKTREE_DIR}}`
-- 默认远程推送目标：`origin/{{DEV_BRANCH}}`
+- 默认任务来源或集成分支：`{{DEV_BRANCH}}`
 
 ## 开始任务
 
@@ -28,16 +28,16 @@ cd {{WORKTREE_DIR}}/<task-name>
 
 ## 完成任务
 
-默认只完成验证和任务分支的原子提交。仅当用户在当前任务中明确要求远程同步时，才执行下面的 `git push`。
+默认只完成验证和任务分支的原子提交。仅当用户在当前任务中明确授权远程同步时，才执行下面的 `git push`。
 
 ```sh
 <运行匹配验证命令>
 git add -- <task-files>
-git commit -m "fix(scope): 中文提交说明"
+git commit -m "fix(scope): <message following project policy>"
 git push -u origin {{TASK_PREFIX}}/<task-name>
 ```
 
-## 合回开发分支
+## 合回集成分支
 
 合入并推送共享开发分支会影响他人；只在当前任务明确授权时执行。
 
@@ -50,7 +50,7 @@ git push origin {{DEV_BRANCH}}
 
 ## 禁止事项
 
-- 不直接向 `{{BASE_BRANCH}}` 提交开发改动。
+- 不绕过仓库的受保护分支策略。
 - 不强制推送。
 - 不夹带无关文件。
 - 不覆盖用户已有未提交改动。

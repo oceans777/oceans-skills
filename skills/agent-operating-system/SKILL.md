@@ -1,6 +1,6 @@
 ---
 name: agent-operating-system
-description: 'Use when a user wants to audit, bootstrap, migrate, dedupe, or operate a project using an eight-layer agent workflow with AGENTS.md, CLAUDE.md, prompt governance, local rules, skills, scripts, Git hooks, first-commit standards guards, worktrees, subagents, verification, commits, merges, and post-task learning capture.'
+description: 'Use only when a user wants to design or change repository-wide agent workflow architecture: audit/bootstrap/migrate/dedupe AGENTS.md or CLAUDE.md, govern reusable prompts, install deterministic agent guards, or explicitly manage an isolated worktree/subagent task lifecycle. Do not invoke for ordinary code changes, commits, merges, or one-off worktree operations unless the user explicitly requests this skill or workflow architecture changes.'
 ---
 
 # Agent Operating System
@@ -67,14 +67,12 @@ All five parts are optional. Do not replace one rigid formula with another. Read
 ## Audit Flow
 
 1. Read `AGENTS.md`, `CLAUDE.md`, `.githooks/`, `scripts/`, `docs/agent/`, existing skill mentions, and worktree configuration.
-2. Classify each rule with this order:
-   - Must always execute, zero exceptions -> hook.
-   - Can be mechanically checked -> script/tool.
-   - Applies only to a path -> local rule.
-   - Multi-step judgment -> skill.
-   - Long reference -> `docs/agent/`.
-   - Every session must know it -> startup file.
-   - One-off or unproven -> do not persist.
+2. Classify each item on two separate axes:
+   - **Scope** decides where its entry point lives: cross-project preference, repository startup guidance, or path-scoped routing.
+   - **Mechanism** decides how it works: judgment-heavy workflow -> skill; mechanically decidable operation -> script/tool; mechanically decidable lifecycle enforcement -> hook; long reference -> `docs/agent/`.
+   - A path-scoped workflow may need both a short local routing rule and a reusable skill. Do not force the whole procedure into the local rule.
+   - A mandatory but judgment-based rule belongs in startup/local guidance, not a hook. Hooks are only for deterministic pass/fail checks.
+   - One-off or unproven lessons should not persist.
 3. Report findings as:
 
 ```text
@@ -100,7 +98,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File <skill-dir>/scripts/bootstra
 
 The script creates missing files only. It must not overwrite existing project files. If files exist, inspect and migrate manually.
 
-By default, generated examples are written in Chinese, protect `main` as the baseline branch, use `dev` as the development integration branch, and use `codex/` for task branches. Override with `--baseline-branch`, `--dev-branch`, or `--task-prefix` only when the project has a different policy.
+Generated examples are written in Chinese by default. Branches are detected from the repository when possible: the remote default branch becomes the baseline and the current branch becomes the integration branch. Override with `--baseline-branch`, `--dev-branch`, or `--task-prefix` when project policy differs.
 
 Created scaffold:
 
@@ -113,6 +111,7 @@ Created scaffold:
 - `docs/agent/prompting-workflow.md`
 - `docs/agent/project-reference.md`
 - `scripts/agent-bootstrap.ps1`
+- `scripts/agent-bootstrap.sh`
 - `scripts/agent-verify.ps1`
 - `scripts/agent-verify.sh`
 - `scripts/agent-standards-hook.sh`
@@ -202,6 +201,10 @@ When starting a task branch, prefer the bundled script:
 powershell -NoProfile -ExecutionPolicy Bypass -File <skill-dir>/scripts/start-agent-task.ps1 -ProjectRoot <repo> -TaskName "<task>" -BaselineBranch dev -TaskPrefix codex -EnsureIgnore
 ```
 
+```sh
+sh <skill-dir>/scripts/start-agent-task.sh --project-root <repo> --task-name "<task>" --baseline-branch dev --task-prefix codex --ensure-ignore
+```
+
 The task-start script keeps its `-BaselineBranch` parameter for compatibility; pass the project's development integration branch, usually `dev`, so the task worktree starts from the branch that will receive the merge. It refuses to reuse an existing branch or worktree path.
 
 Use subagents only when tasks are independent and the user has asked for subagent or parallel work. Give each subagent a distinct worktree, branch, file ownership, verification command, and merge target. Tell each subagent that other work may exist and it must not revert unrelated changes.
@@ -242,5 +245,5 @@ that no durable record is needed.
 - Letting multiple tasks share one worktree: this causes branch pollution.
 - Dispatching subagents into the same checkout: give each editing subagent a separate branch/worktree.
 - Overwriting an existing project workflow: audit first, patch narrowly.
-- Hand-writing task setup every time: use `start-agent-task.ps1` when branch/worktree setup matters.
+- Hand-writing task setup every time: use the platform-appropriate `start-agent-task` script when branch/worktree setup matters.
 - Waiting for the user to name a "rule" or "lesson": infer durable lessons from friction signals and offer a triage draft.

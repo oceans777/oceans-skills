@@ -1,7 +1,7 @@
 param(
     [string]$ProjectRoot = (Get-Location).Path,
-    [string]$BaselineBranch = 'main',
-    [string]$DevBranch = 'dev',
+    [string]$BaselineBranch = '',
+    [string]$DevBranch = '',
     [string]$TaskPrefix = 'codex',
     [string]$WorktreeDir = '.worktrees',
     [switch]$EnableHooks,
@@ -124,6 +124,24 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($repoRoot)) {
 Set-Location $repoRoot
 Info "Bootstrapping agent OS in $repoRoot"
 
+$currentBranchOutput = (& git branch --show-current 2>$null)
+$currentBranch = if ($null -eq $currentBranchOutput) { '' } else { $currentBranchOutput.ToString().Trim() }
+if ([string]::IsNullOrWhiteSpace($BaselineBranch)) {
+    $originHead = (& git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>$null)
+    if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($originHead)) {
+        $BaselineBranch = $originHead.Trim() -replace '^origin/', ''
+    } else {
+        $BaselineBranch = $currentBranch
+    }
+}
+if ([string]::IsNullOrWhiteSpace($DevBranch)) {
+    $DevBranch = if ([string]::IsNullOrWhiteSpace($currentBranch)) { $BaselineBranch } else { $currentBranch }
+}
+if ([string]::IsNullOrWhiteSpace($BaselineBranch) -or [string]::IsNullOrWhiteSpace($DevBranch)) {
+    throw 'Could not detect branch policy. Pass -BaselineBranch and -DevBranch explicitly.'
+}
+Info "Branch defaults: baseline=$BaselineBranch integration=$DevBranch"
+
 Ensure-Directory (Join-Path $repoRoot 'docs')
 Ensure-Directory (Join-Path $repoRoot 'docs/agent')
 Ensure-Directory (Join-Path $repoRoot 'scripts')
@@ -141,6 +159,7 @@ Copy-TemplateIfMissing 'branch-workflow.template.md' (Join-Path $repoRoot 'docs/
 Copy-TemplateIfMissing 'prompting-workflow.template.md' (Join-Path $repoRoot 'docs/agent/prompting-workflow.md')
 Copy-TemplateIfMissing 'project-reference.template.md' (Join-Path $repoRoot 'docs/agent/project-reference.md')
 Copy-TemplateIfMissing 'agent-bootstrap.template.ps1' (Join-Path $repoRoot 'scripts/agent-bootstrap.ps1')
+Copy-TemplateIfMissing 'agent-bootstrap.template.sh' (Join-Path $repoRoot 'scripts/agent-bootstrap.sh')
 Copy-TemplateIfMissing 'agent-verify.template.ps1' (Join-Path $repoRoot 'scripts/agent-verify.ps1')
 Copy-TemplateIfMissing 'agent-verify.template.sh' (Join-Path $repoRoot 'scripts/agent-verify.sh')
 Copy-FileIfMissing (Join-Path $scriptDir 'agent-standards-hook.sh') (Join-Path $repoRoot 'scripts/agent-standards-hook.sh')
@@ -158,6 +177,7 @@ if ($UseLocalWorktrees) {
 }
 
 if ($IsLinux -or $IsMacOS) {
+    & chmod +x (Join-Path $repoRoot 'scripts/agent-bootstrap.sh') 2>$null
     & chmod +x (Join-Path $repoRoot 'scripts/agent-verify.sh') 2>$null
     & chmod +x (Join-Path $repoRoot 'scripts/agent-standards-hook.sh') 2>$null
     & chmod +x (Join-Path $repoRoot 'scripts/dedupe-agent-docs.sh') 2>$null

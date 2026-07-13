@@ -103,7 +103,7 @@ Info "Repository: $repoRoot"
 $branch = (& git branch --show-current).Trim()
 if ([string]::IsNullOrWhiteSpace($branch)) {
     Fail 'Detached HEAD is not allowed for normal agent work.'
-} elseif ($branch -eq $BaselineBranch -and -not ($AllowBaselineBranch -or $AllowDevBranch -or $isMergeInProgress)) {
+} elseif ($BaselineBranch -ne $DevBranch -and $branch -eq $BaselineBranch -and -not ($AllowBaselineBranch -or $AllowDevBranch -or $isMergeInProgress)) {
     Fail "Work is on $BaselineBranch. Use $DevBranch or a $TaskPrefix/<task-name> branch, or pass -AllowBaselineBranch for intentional baseline maintenance."
 } elseif ($branch -eq $DevBranch) {
     Pass "Development branch policy: $branch"

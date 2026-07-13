@@ -19,6 +19,8 @@ files.
   directory.
 - File-type-specific conventions.
 - Local naming, styling, or architecture constraints.
+- Short routing pointers to path-specific skills or scripts. Do not move an
+  entire multi-step procedure into a nested startup file.
 
 ## Move To Skills
 
@@ -40,9 +42,11 @@ files.
 ## Move To Hooks
 
 - Checks that must happen before commit, message acceptance, push, deploy, or
-  destructive operation.
+  another lifecycle event and whose pass/fail result is mechanically decidable.
 
 Hooks should call scripts. They should not duplicate script logic.
+Mandatory judgment-based rules stay in startup guidance; a hook cannot enforce
+them safely.
 
 ## Move To Reference Docs
 

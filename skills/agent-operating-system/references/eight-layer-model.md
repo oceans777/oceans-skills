@@ -1,6 +1,6 @@
 # Eight-Layer Agent Model
 
-Use these layers to decide where agent knowledge and behavior belongs.
+Use these layers to decide where agent knowledge and behavior belongs. Scope and mechanism are independent: a path-scoped multi-step workflow can use a short local routing rule plus a skill, and a repository-wide mechanical rule can use startup guidance plus a script or hook.
 
 ## 1. Memory / Preference
 
@@ -22,10 +22,10 @@ be automated.
 
 ## 3. Path-Scoped Rules
 
-Rules that apply only to a folder, module, package, file type, template family,
-or legacy area. Put them close to the files they govern when the agent harness
-supports local instruction files. Otherwise keep them in `docs/agent/` and link
-from the startup file.
+Concise constraints or routing that apply only to a folder, module, package,
+file type, template family, or legacy area. Put the entry point close to the
+files it governs. Keep multi-step procedures in skills and mechanical checks in
+scripts, then reference them from the local rule.
 
 ## 4. Skills
 
@@ -62,7 +62,9 @@ Mandatory, deterministic guardrails:
 - `commit-msg`: validate message format.
 - `pre-push`: optional remote/baseline checks.
 
-Hooks must be small and call scripts. Do not put complex judgment in hooks.
+Hooks must be small and call scripts. Use a hook only when pass/fail is
+mechanically decidable and tied to a lifecycle event. Do not put complex
+judgment in hooks.
 
 ## 7. Worktrees / Subagents
 

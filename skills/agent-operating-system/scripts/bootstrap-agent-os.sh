@@ -2,8 +2,8 @@
 set -eu
 
 PROJECT_ROOT=$(pwd)
-BASELINE_BRANCH=main
-DEV_BRANCH=dev
+BASELINE_BRANCH=
+DEV_BRANCH=
 TASK_PREFIX=codex
 WORKTREE_DIR=.worktrees
 ENABLE_HOOKS=0
@@ -20,8 +20,8 @@ Usage: bootstrap-agent-os.sh [options]
 
 Options:
   --project-root <path>       Repository path. Defaults to current directory.
-  --baseline-branch <name>    Protected baseline branch. Defaults to main.
-  --dev-branch <name>         Development integration branch. Defaults to dev.
+  --baseline-branch <name>    Baseline branch. Defaults to origin/HEAD or current branch.
+  --dev-branch <name>         Task source/integration branch. Defaults to current branch.
   --task-prefix <prefix>      Task branch prefix. Defaults to codex.
   --worktree-dir <path>       Local worktree directory. Defaults to .worktrees.
   --enable-hooks              Set git core.hooksPath=.githooks.
@@ -101,6 +101,21 @@ fi
 
 cd "$repo_root"
 info "Bootstrapping agent OS in $repo_root"
+
+current_branch=$(git branch --show-current 2>/dev/null || true)
+if [ -z "$BASELINE_BRANCH" ]; then
+  BASELINE_BRANCH=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##' || true)
+  [ -n "$BASELINE_BRANCH" ] || BASELINE_BRANCH=$current_branch
+fi
+if [ -z "$DEV_BRANCH" ]; then
+  DEV_BRANCH=$current_branch
+  [ -n "$DEV_BRANCH" ] || DEV_BRANCH=$BASELINE_BRANCH
+fi
+if [ -z "$BASELINE_BRANCH" ] || [ -z "$DEV_BRANCH" ]; then
+  echo 'Could not detect branch policy. Pass --baseline-branch and --dev-branch explicitly.' >&2
+  exit 1
+fi
+info "Branch defaults: baseline=$BASELINE_BRANCH integration=$DEV_BRANCH"
 
 ensure_dir() {
   path=$1
@@ -201,6 +216,7 @@ copy_template_if_missing branch-workflow.template.md docs/agent/branch-workflow.
 copy_template_if_missing prompting-workflow.template.md docs/agent/prompting-workflow.md
 copy_template_if_missing project-reference.template.md docs/agent/project-reference.md
 copy_template_if_missing agent-bootstrap.template.ps1 scripts/agent-bootstrap.ps1
+copy_template_if_missing agent-bootstrap.template.sh scripts/agent-bootstrap.sh
 copy_template_if_missing agent-verify.template.ps1 scripts/agent-verify.ps1
 copy_template_if_missing agent-verify.template.sh scripts/agent-verify.sh
 copy_file_if_missing "$SCRIPT_DIR/agent-standards-hook.sh" scripts/agent-standards-hook.sh
@@ -209,7 +225,7 @@ copy_template_if_missing agent-standards.conf.template .oceans/agent-standards.c
 copy_template_if_missing pre-commit.template .githooks/pre-commit
 copy_template_if_missing commit-msg.template .githooks/commit-msg
 
-chmod +x scripts/agent-verify.sh scripts/agent-standards-hook.sh scripts/dedupe-agent-docs.sh .githooks/pre-commit .githooks/commit-msg
+chmod +x scripts/agent-bootstrap.sh scripts/agent-verify.sh scripts/agent-standards-hook.sh scripts/dedupe-agent-docs.sh .githooks/pre-commit .githooks/commit-msg
 append_line_if_missing .gitattributes '.githooks/* text eol=lf'
 append_line_if_missing .gitattributes 'scripts/*.sh text eol=lf'
 

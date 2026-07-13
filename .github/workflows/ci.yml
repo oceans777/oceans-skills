@@ -27,7 +27,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check skill structure
         shell: pwsh
-        run: Get-ChildItem skills -Directory | ForEach-Object { if (-not (Test-Path (Join-Path $_.FullName 'SKILL.md'))) { throw "Missing SKILL.md: $($_.Name)" } }
+        run: |
+          Get-ChildItem skills -Directory | ForEach-Object {
+            if (-not (Test-Path (Join-Path $_.FullName 'SKILL.md'))) {
+              throw "Missing SKILL.md: $($_.Name)"
+            }
+          }
       - name: Run PowerShell tests
         shell: pwsh
         run: .\tests\test-agent-operating-system.ps1

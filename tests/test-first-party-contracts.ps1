@@ -4,7 +4,7 @@ $Aos = Join-Path $RepoRoot 'skills\agent-operating-system'
 $Config = Get-Content -LiteralPath (Join-Path $Aos 'assets\agent-standards.conf.template') -Raw -Encoding UTF8
 $AosSkill = Get-Content -LiteralPath (Join-Path $Aos 'SKILL.md') -Raw -Encoding UTF8
 $Triage = Get-Content -LiteralPath (Join-Path $RepoRoot 'skills\experience-triage\SKILL.md') -Raw -Encoding UTF8
-if ($Config -notmatch '(?m)^schema_version=2$') { throw 'Missing schema version.' }
+if ($Config -notmatch '(?m)^schema_version=2\r?$') { throw 'Missing schema version.' }
 if ($Config -notmatch '(?m)^generator_version=') { throw 'Missing generator version.' }
 if ($AosSkill -notmatch 'invoke `experience-triage`') { throw 'Agent OS does not delegate durable-learning classification.' }
 foreach ($term in @('observe','candidate','adopted','automated','retired','Classify two independent axes','hooks require deterministic pass/fail logic')) {

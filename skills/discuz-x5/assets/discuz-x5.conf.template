@@ -1,0 +1,9 @@
+# Discuz X5 verification configuration
+schema_version=1
+discuz_root=.
+plugin_roots=source/plugin
+template_roots=template
+generated_roots=data/cache,data/template,data/attachment
+php_command=php
+node_command=node
+run_related_tests=1

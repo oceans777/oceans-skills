@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -24,14 +25,19 @@ def run(
     check: bool = True,
     timeout: float = 20,
 ) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    env.update({"PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"})
     result = subprocess.run(
         args,
         cwd=cwd,
         input=input_text,
         text=True,
+        encoding="utf-8",
+        errors="strict",
         capture_output=True,
         check=False,
         timeout=timeout,
+        env=env,
     )
     if check and result.returncode != 0:
         raise AssertionError(
@@ -130,6 +136,7 @@ class LedgerCase(unittest.TestCase):
         if body is not None:
             args += ["-m", body]
         self.git(*args)
+
 
 class CiCase(LedgerCase):
     def setUp(self) -> None:

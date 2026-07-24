@@ -1,4 +1,4 @@
 interface:
   display_name: "Experience Triage"
-  short_description: "Route agent learnings to the right layer."
-  default_prompt: "Use $experience-triage to decide where this task learning should be preserved."
+  short_description: "Classify durable learning with evidence and conflict checks."
+  default_prompt: "Use $experience-triage to inspect existing guidance, classify scope and mechanism separately, assign a lifecycle state, and recommend the smallest durable change."

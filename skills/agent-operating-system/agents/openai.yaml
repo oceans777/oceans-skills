@@ -1,4 +1,4 @@
 interface:
   display_name: "Agent Operating System"
-  short_description: "Audit and install agent workflow and prompt guardrails."
-  default_prompt: "Use $agent-operating-system to audit this project and align its agent rules, task prompts, hooks, and worktree workflow."
+  short_description: "Audit and change repository-wide agent workflow architecture."
+  default_prompt: "Use $agent-operating-system only for repository-wide agent workflow architecture. Select one mode, avoid ordinary task over-triggering, and delegate durable-learning classification to $experience-triage."

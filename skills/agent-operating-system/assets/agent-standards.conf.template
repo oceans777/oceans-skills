@@ -1,4 +1,6 @@
 # oceans777 agent standards project config
+schema_version=2
+generator_version=2.1.0
 require_agents_md=1
 require_claude_md={{REQUIRE_CLAUDE_MD}}
 commit_message=conventional

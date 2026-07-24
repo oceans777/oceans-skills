@@ -1,0 +1,32 @@
+{
+  "name": "idea-ledger",
+  "version": "2.1.0",
+  "description": "显式审查、记录和批准关键产品决策；在写入前验证完整关系图，并提供证据化冲突分析、可追溯依赖和可选严格 CI。",
+  "author": {
+    "name": "Idea Ledger"
+  },
+  "license": "MIT",
+  "keywords": [
+    "product",
+    "decision-record",
+    "requirements",
+    "traceability",
+    "conflict-review"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Idea Ledger",
+    "shortDescription": "显式管理关键产品决策与全局关系一致性",
+    "longDescription": "把关键产品决策保存为项目内、结构化、可验证的记录；在任何终态写入前预演完整关系图，支持 lineage/exact 依赖、派生替代状态、完整审计与可选 Git CI 检查。默认只在显式调用时运行，不自动初始化 Git、修改 Git 配置、提交或撤销用户文件。",
+    "developerName": "Idea Ledger",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "使用 $idea-ledger new 审查并记录这项关键产品决策，不执行 Git 操作。",
+      "使用 $idea-ledger audit 对当前项目的全部决策记录做分页冲突审计。"
+    ]
+  }
+}

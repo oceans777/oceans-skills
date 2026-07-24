@@ -1,0 +1,37 @@
+{
+  "title": "工作区云同步改为显式启用",
+  "goal": "让有跨设备需求的用户同步工作区，同时保留默认本地隐私边界。",
+  "decision": "新增按工作区启用的加密云同步；新工作区默认关闭，启用前不上传内容。",
+  "rationale": "按工作区 opt-in 可以提供跨设备能力，同时保留 IDEA-0001 的默认隐私承诺。",
+  "outcome": "启用同步的设备最终一致，未启用的工作区保持仅本地。",
+  "scope": ["同步", "存储", "隐私"],
+  "tags": ["opt-in", "multi-device"],
+  "constraints": [
+    "传输与静态存储必须加密。",
+    "关闭同步后停止后续上传，并提供远端副本删除流程。"
+  ],
+  "acceptance_criteria": [
+    "新工作区在用户明确启用前没有内容上传请求。",
+    "两个已启用设备在离线重连后最终一致。"
+  ],
+  "alternatives_considered": ["所有已登录用户默认开启同步", "仅提供手动导出导入"],
+  "tradeoffs": ["需要维护云端基础设施和删除流程。"],
+  "non_goals": ["本决策不规定协同编辑。"],
+  "sources": ["跨设备用户研究", "隐私边界评审"],
+  "owner": "Product",
+  "review_at": null,
+  "conflict": {
+    "compatibility": "compatible",
+    "reviewed_ids": ["IDEA-0001"],
+    "conflicts_with": [],
+    "rationale": "IDEA-0001 要求默认仅本地并要求远端传输获得明确授权；本决策保留默认值并把授权落实为工作区级 opt-in。",
+    "confidence": "high",
+    "disposition": "none",
+    "mitigation": null
+  },
+  "supersedes": [],
+  "depends_on": [
+    {"id": "IDEA-0001", "mode": "lineage"}
+  ],
+  "notes": []
+}

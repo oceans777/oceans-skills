@@ -1,0 +1,29 @@
+{
+  "invocation_policy": "explicit_only",
+  "positive": [
+    "$idea-ledger new 记录我们把新用户默认空间设为私有的决策",
+    "/idea-ledger approve IDEA-0007",
+    "$idea-ledger audit 审计全部历史决策是否冲突",
+    "/idea-ledger reject IDEA-0012，理由是本季度不采用"
+  ],
+  "negative": [
+    "请使用 Idea Ledger 审计全部历史决策是否冲突",
+    "把 IDEA-0012 标记为拒绝，并记录理由",
+    "解释这段代码，不要修改文件",
+    "把这份产品文档总结成三句话",
+    "不要修改现有功能，只分析风险",
+    "翻译 feature 和 requirement 这两个词",
+    "修复登录按钮颜色错误",
+    "继续",
+    "OK",
+    "查看普通 Git 历史"
+  ],
+  "must_pass": [
+    "Only $idea-ledger or /idea-ledger prompts invoke the explicit-only skill.",
+    "Generic affirmation never accepts a record.",
+    "No command changes Git configuration or discards working-tree changes.",
+    "Conflict conclusions cite record IDs, evidence, disposition, and confidence.",
+    "Normal context retrieval stays within the configured character budget.",
+    "A write is rejected before disk mutation when the candidate global graph is invalid."
+  ]
+}

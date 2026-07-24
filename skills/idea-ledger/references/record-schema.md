@@ -1,0 +1,217 @@
+# Record schema — v2.1
+
+`new` and `revise` accept one JSON object. Unknown fields are rejected so schema drift remains visible. New writes use the v2.1 conflict and dependency forms; v2.0 forms remain readable for migration compatibility.
+
+## Required proposal fields
+
+```json
+{
+  "title": "Cross-device sync with explicit opt-in",
+  "goal": "Let signed-in users access the same workspace on multiple devices.",
+  "decision": "Add encrypted cloud sync, disabled by default, with per-workspace opt-in.",
+  "outcome": "Opted-in workspaces converge without uploading local-only workspaces.",
+  "scope": ["sync", "storage", "privacy"],
+  "conflict": {
+    "compatibility": "compatible",
+    "reviewed_ids": ["IDEA-0003"],
+    "conflicts_with": [],
+    "rationale": "IDEA-0003 requires local-only storage by default; this proposal preserves that default and adds an explicit opt-in path.",
+    "confidence": "high",
+    "disposition": "none",
+    "mitigation": null
+  }
+}
+```
+
+Required fields are:
+
+- `title`: single-line title;
+- `goal`: problem or objective;
+- `decision`: the rule future work must follow;
+- `outcome`: expected observable result;
+- `scope`: one or more applicability labels;
+- `conflict`: structured review result.
+
+## Optional proposal fields
+
+```json
+{
+  "rationale": "Why this decision was selected.",
+  "tags": ["security", "multi-device"],
+  "constraints": [
+    "Encryption in transit and at rest is mandatory.",
+    "A user can return a workspace to local-only mode."
+  ],
+  "acceptance_criteria": [
+    "A new workspace uploads no data before explicit opt-in.",
+    "Two opted-in devices converge after reconnecting."
+  ],
+  "alternatives_considered": ["Device-to-device transfer only"],
+  "tradeoffs": ["Adds cloud operating cost in exchange for cross-device continuity"],
+  "non_goals": ["This decision does not select a cloud vendor"],
+  "sources": ["Product review 2026-07-24"],
+  "owner": "Product",
+  "review_at": "2026-10-01T00:00:00+00:00",
+  "supersedes": [],
+  "depends_on": [
+    {"id": "IDEA-0008", "mode": "lineage"}
+  ],
+  "notes": ["Legal review is tracked outside this ledger."]
+}
+```
+
+`owner` and `review_at` are informational fields; the CLI does not authenticate owners or schedule reviews.
+
+## Conflict object
+
+```json
+{
+  "compatibility": "tension",
+  "reviewed_ids": ["IDEA-0003", "IDEA-0007"],
+  "conflicts_with": ["IDEA-0003"],
+  "rationale": "The proposal adds remote transfer while IDEA-0003 protects a local-only default.",
+  "confidence": "high",
+  "disposition": "bounded",
+  "mitigation": "Remote transfer is disabled by default and can begin only after workspace-level opt-in."
+}
+```
+
+### Compatibility
+
+| Value | Meaning |
+|---|---|
+| `compatible` | No material incompatibility found in the reviewed evidence |
+| `duplicate` | Substantively covered by an earlier decision |
+| `tension` | Can coexist only with an explicit boundary or trade-off |
+| `incompatible` | Cannot coexist in the same applicability |
+| `unknown` | Evidence is insufficient |
+
+### Disposition
+
+| Value | Meaning |
+|---|---|
+| `none` | No action required |
+| `bounded` | Preserve both decisions behind a concrete boundary or mitigation |
+| `supersede` | Replace every conflicting decision |
+| `defer` | Do not approve yet |
+
+### Structural combinations
+
+- `compatible` requires `disposition: none`, empty `conflicts_with`, and `mitigation: null`.
+- `duplicate` requires non-empty `conflicts_with` and `disposition: defer`.
+- `tension` requires non-empty `conflicts_with` and either `bounded` or `defer`; `bounded` requires a non-empty `mitigation`.
+- `incompatible` requires non-empty `conflicts_with` and either `supersede` or `defer`; `supersede` requires a non-empty `mitigation`.
+- `unknown` requires `disposition: defer`.
+- Every `conflicts_with` ID must also appear in `reviewed_ids`.
+
+Direct approval is restricted to:
+
+```text
+compatible / none
+tension / bounded
+incompatible / supersede
+```
+
+For `incompatible / supersede`, `supersedes` must equal `conflicts_with` as a set.
+
+The classifier remains a model or human judgment. The CLI validates structure and graph consistency; it does not prove the semantic judgment correct.
+
+## Dependencies
+
+Preferred form:
+
+```json
+{
+  "depends_on": [
+    {"id": "IDEA-0008", "mode": "lineage"},
+    {"id": "IDEA-0010", "mode": "exact"}
+  ]
+}
+```
+
+- `lineage`: resolve the referenced record through the unique accepted `supersedes` chain to its current effective successor.
+- `exact`: require the referenced record itself to remain currently effective.
+
+A dependency ID cannot also appear in the same record's `supersedes` or `conflicts_with`. The active accepted dependency graph must be acyclic.
+
+Legacy v2.0 strings are accepted and interpreted as `lineage`:
+
+```json
+{"depends_on": ["IDEA-0008"]}
+```
+
+## Relationship rules
+
+- All referenced IDs must exist before the candidate write is committed.
+- A record cannot reference itself.
+- Dependency IDs must be disjoint from both `supersedes` and `conflicts_with`; for a `supersede` disposition, `supersedes` and `conflicts_with` must instead match exactly.
+- `supersedes` targets must be accepted.
+- A target can have at most one accepted direct successor.
+- Only currently effective accepted records impose runtime dependency requirements.
+- A proposed supersession is rejected before disk mutation when it would break an active `exact` dependency.
+
+## Stored state and metadata
+
+The CLI adds deterministic ledger fields such as:
+
+```json
+{
+  "schema": 2,
+  "id": "IDEA-0001",
+  "number": 1,
+  "status": "proposed",
+  "created_at": "2026-07-24T12:34:56+00:00",
+  "updated_at": "2026-07-24T12:34:56+00:00",
+  "accepted_at": null,
+  "rejected_at": null,
+  "rejection_reason": null,
+  "approval": null
+}
+```
+
+Stored states:
+
+- `proposed`: editable only through `revise`; no terminal metadata;
+- `accepted`: immutable; approval and `accepted_at` required; `updated_at == accepted_at`;
+- `rejected`: immutable; reason and `rejected_at` required; `updated_at == rejected_at`.
+
+`superseded` is a derived effective state and is never written into the old record.
+
+## Approval evidence
+
+`accept` requires exactly one record-specific phrase, ignoring terminal punctuation and repeated whitespace:
+
+```text
+批准 IDEA-0001
+APPROVE IDEA-0001
+```
+
+The accepted record stores:
+
+```json
+{
+  "approval": {
+    "method": "explicit_phrase",
+    "recorded_phrase": "批准 IDEA-0001",
+    "actor_verified": false,
+    "recorded_at": "2026-07-24T12:34:56+00:00"
+  }
+}
+```
+
+This is an audit trace only. It does not identify the speaker, prove authorization, or provide non-repudiation.
+
+## v2.0 compatibility
+
+v2.1 can read v2.0 `conflict.kind` objects and normalizes them in memory:
+
+- `none` → `compatible / none`;
+- `duplicate` → `duplicate / defer`;
+- `tension` without resolution → `tension / defer`;
+- `tension` with resolution → `tension / bounded`;
+- `hard_conflict` → `incompatible / defer`;
+- `resolved` with `supersedes` → `incompatible / supersede`;
+- `resolved` without `supersedes` → `tension / bounded`;
+- `unknown` → `unknown / defer`.
+
+New or revised records are written in the v2.1 two-axis form.

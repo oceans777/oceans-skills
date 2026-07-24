@@ -4,27 +4,41 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   shell:
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
       - name: Check skill structure
         run: |
           for skill in skills/*; do
             test -f "$skill/SKILL.md"
           done
       - name: Run Shell tests
-        run: sh tests/test-agent-operating-system.sh
+        shell: sh
+        run: |
+          for test_file in tests/test-*.sh; do
+            echo "==> $test_file"
+            sh "$test_file"
+          done
 
   powershell:
+    timeout-minutes: 15
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
       - name: Check skill structure
         shell: pwsh
         run: |
@@ -33,6 +47,18 @@ jobs:
               throw "Missing SKILL.md: $($_.Name)"
             }
           }
+      - name: Parse PowerShell files
+        shell: pwsh
+        run: |
+          Get-ChildItem -Recurse -Filter *.ps1 | ForEach-Object {
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$errors) | Out-Null
+            if ($errors) { throw ($errors | Out-String) }
+          }
       - name: Run PowerShell tests
         shell: pwsh
-        run: .\tests\test-agent-operating-system.ps1
+        run: |
+          Get-ChildItem tests -Filter 'test-*.ps1' | Sort-Object Name | ForEach-Object {
+            Write-Host "==> $($_.FullName)"
+            & $_.FullName
+          }

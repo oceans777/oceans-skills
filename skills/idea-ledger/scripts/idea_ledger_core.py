@@ -7,6 +7,10 @@ validation, transactional storage, and query/audit projections.
 """
 from __future__ import annotations
 
+from _idea_ledger_platform import install_platform_compatibility
+
+install_platform_compatibility()
+
 from _idea_ledger_foundation import *
 from _idea_ledger_paths import *
 from _idea_ledger_normalize import *

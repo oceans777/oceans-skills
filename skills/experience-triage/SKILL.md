@@ -1,99 +1,102 @@
 ---
 name: experience-triage
-description: 'Use when a user wants to preserve a lesson, pitfall, rule, workflow, or agent behavior after real work and asks where it belongs: AGENTS.md/CLAUDE.md, directory rules, a skill, script/MCP tool, hook, memory, or no durable record. Triggers include "这次学到的", "踩坑沉淀", "规则该写到哪", and "新流程放哪".'
+description: 'Use when a user wants to preserve a lesson, pitfall, rule, workflow, or agent behavior after real work and asks whether it should be observed, adopted, automated, or discarded, and where it belongs: startup guidance, local rules, a skill, script/tool, hook, memory, or no durable record.'
 ---
 
 # Experience Triage
 
-## Overview
+## Purpose
 
-Classify a new agent-work lesson into the right persistence layer. Optimize for reliability, low context cost, and future maintainability instead of dumping every rule into the global instruction file.
+Turn real work evidence into the smallest durable improvement that prevents recurrence without bloating startup context or encoding one-off reactions as permanent policy.
 
-## Workflow
+## Boundary
 
-1. Restate the lesson in one concrete sentence.
-2. If the lesson is vague, ask only the minimum clarifying question needed to classify it.
-3. Classify both the lesson's scope and its execution mechanism. These are separate decisions and may produce a combined answer.
-4. Give a directly usable draft for the recommended layer.
-5. Mention when the lesson should later be promoted, demoted, automated, or deleted.
+This skill classifies and drafts durable learning. It does not execute repository workflow, install hooks, edit persistence files, or copy domain-specific rules unless the user explicitly asks for implementation.
 
-## Decision Tree
+Before proposing a new rule, inspect the intended target and nearby layers for duplicates, stricter existing rules, contradictions, deprecated guidance, and an existing mechanical check.
 
-Use these questions in order:
+## Required Evidence
 
-**Q0: Is this lesson too private, speculative, one-off, or already obvious?**  
-Yes -> Do not persist it. Explain why.  
-No -> Q1.
+Capture only facts that affect the decision:
 
-**Q1: What is the scope?**
+- what happened;
+- observable impact or rework;
+- whether it has happened before;
+- affected scope;
+- whether pass/fail is mechanically decidable;
+- lifecycle event, if any;
+- existing rule or automation that should already cover it;
+- conflict, owner, review condition, and retirement condition.
 
-- Cross-project personal/team preference -> user-level memory or rule.
-- Whole repository -> repository guidance or repository skill/tool.
-- Directory, file type, module, plugin, or subsystem -> local routing guidance near that path, while keeping detailed workflows or tools in a skill/script.
+A severe security, data-loss, or shared-side-effect incident may become a candidate after one occurrence. Low-impact preferences normally require repetition before adoption.
 
-Scope decides where the entry point lives. It does not decide whether the implementation is prose, a skill, a script, or a hook.
+## Lifecycle
 
-**Q2: Is the behavior mechanically decidable and repeatable?**
+Use one state:
 
-Yes -> Recommend a `script`, CLI command, MCP tool, or automation, then continue to Q3 to decide whether a hook should invoke it.
+1. `observe`: plausible but insufficient evidence; record no permanent rule.
+2. `candidate`: evidence exists, but duplicate/conflict/owner review is incomplete.
+3. `adopted`: approved durable guidance or workflow.
+4. `automated`: a deterministic tool or hook enforces the adopted behavior.
+5. `retired`: obsolete, superseded, harmful, or no longer worth its context cost.
 
-No -> Skip Q3 and continue to Q4.
+Do not jump directly from a vague complaint to `adopted`.
 
-**Q3: Is it tied to a deterministic lifecycle event and required every time?**
+## Classification
 
-Yes -> Recommend a `hook` that calls the mechanical check. A hook is appropriate only when pass/fail can be determined without subjective judgment.
+Classify two independent axes.
 
-No -> Q4.
+### Scope Axis
 
-**Q4: Is it a multi-step workflow, checklist, review flow, or branching decision process?**  
-Yes -> Recommend a new or updated `skill`. If it is path-scoped, add only a short local routing rule that points to the skill.
+- Cross-project personal or team preference -> user-level memory or rule.
+- Whole repository -> repository startup guidance, repository skill, or repository tool.
+- Directory, file type, module, plugin, or subsystem -> short local routing guidance near that path.
 
-No -> Q5.
+### Mechanism Axis
 
-**Q5: Should every session in this project know it as a default behavior, map, or hard constraint?**  
-Yes -> Recommend top-level `AGENTS.md` or `CLAUDE.md`. Keep it concise and judgment-oriented; do not claim a hook can enforce it unless Q2 and Q3 both passed.
+- Mechanically decidable and repeatable -> script, command, tool, or automation.
+- Mechanically decidable, tied to a lifecycle event, and mandatory -> hook invoking the mechanical check.
+- Judgment-heavy multi-step process -> skill.
+- High-frequency project default, map, or hard constraint -> concise startup guidance.
+- Long explanation or evidence -> reference documentation.
+- One-off, private, speculative, obvious, or already covered -> no new durable record.
 
-No -> Q6.
+A result may combine layers. Example: a path-scoped rule routes users to a reusable skill, while a hook invokes a deterministic validator.
 
-**Q6: Is it a stable personal or team preference that applies across projects?**  
-Yes -> Recommend memory or a user-level rule.  
-No -> Do not persist it yet; wait for another real occurrence.
+## Decision Flow
 
-## Layer Guide
+1. Restate the lesson as a falsifiable sentence.
+2. Gather the minimum evidence.
+3. Search existing target layers for duplicate, conflict, and stronger coverage.
+4. Assign lifecycle state.
+5. Classify scope and mechanism separately.
+6. Recommend the smallest durable change.
+7. Draft the exact text, command, test, or hook contract only when adoption is justified.
+8. Define promotion, review, automation, and retirement conditions.
 
-- `AGENTS.md` / `CLAUDE.md`: high-frequency project defaults, repository map, safety rules, collaboration rules, verification gates.
-- Nested rules: concise local constraints or routing for one directory, module, plugin, template set, or file type. Keep detailed procedures in skills or scripts.
-- `skill`: reusable judgment-heavy process with steps, branches, examples, and checks.
-- `script` / CLI / MCP tool: deterministic execution, data retrieval, validation, transformation, or repeatable checks.
-- `hook`: mechanically decidable pre/post action bound to a lifecycle event; hooks must not make subjective decisions.
-- Memory / user rule: stable cross-project preference, not repository-specific.
-- No persistence: one-off discoveries, temporary debugging details, personal notes, or rules that would create noise.
+## Output
 
-## Output Format
-
-Use this exact shape unless the user asks for another format:
+Use a compact response for simple cases and the full form for consequential cases.
 
 ```text
-[Triage conclusion] <layer>
-[Recommended location] <path or asset>
-[Reason] <1-3 concise bullets>
-[Draft] <directly usable draft, command, hook sketch, or skill description>
-[Follow-up reminder] <promotion/demotion/automation/safety note, if useful>
+[State] observe | candidate | adopted | automated | retired
+[Lesson] one falsifiable sentence
+[Evidence] occurrence, impact, and existing coverage
+[Conflict check] duplicate, contradiction, or none
+[Scope] cross-project | repository | path-scoped
+[Mechanism] guidance | skill | script/tool | hook | no record
+[Target] exact path or system
+[Draft] directly usable content, when justified
+[Review/retire] condition and owner
 ```
 
-## Current-Repo Hints
+## Guardrails
 
-When a repository has an `AGENTS.md`, treat it as the canonical project instruction layer. For Discuz X5 template work, classify common lessons like this:
+- Do not recommend a hook merely because something should happen every time; hooks require deterministic pass/fail logic.
+- Do not create a new rule when an existing stricter rule or test already covers the case.
+- Do not place detailed procedures in always-loaded startup files.
+- Do not preserve blame, temporary debugging facts, secrets, personal data, or machine-specific paths.
+- Do not claim that a model judgment can be enforced deterministically.
+- Do not silently resolve contradictory rules; surface the conflict and stop adoption until an owner decides.
 
-- "Do not maintain compiled template cache as source" -> top-level `AGENTS.md` if not already present.
-- "Only this plugin has this static asset convention" -> nested rule near that plugin.
-- "After template changes, inspect desktop/mobile/login/navigation/static assets" -> skill or QA checklist.
-- "Run `php -l` on changed PHP files before commit" -> verification script or hook if it must be enforced.
-- "How to release this repository" -> skill if it branches; script/tool if it is deterministic.
-
-## Writing Rules
-
-- Be specific: include file paths, trigger phrases, examples, and non-examples.
-- Prefer moving detailed procedures out of always-loaded files and into skills.
-- Prefer automation over instructions when the behavior is mechanical.
-- Do not create or edit persistence files unless the user asks to implement the recommendation.
+Read `references/evaluation-cases.md` for representative classification cases.

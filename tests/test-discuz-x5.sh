@@ -54,6 +54,18 @@ printf '%s\n' '<?php echo "ok";' > "$PROJECT/source/plugin/demo/example.php"
 (cd "$PROJECT" && TEST_MARKER="$PROJECT/test-marker" sh scripts/discuz-x5-verify.sh >/dev/null)
 test -f "$PROJECT/test-marker"
 
+# Staged renames must validate the new path, not concatenate old and new names.
+git -C "$PROJECT" add .
+git -C "$PROJECT" commit -m 'test: baseline' >/dev/null
+git -C "$PROJECT" mv source/plugin/demo/example.php source/plugin/demo/renamed.php
+printf '%s\n' '<?php echo "BROKEN";' > "$PROJECT/source/plugin/demo/renamed.php"
+git -C "$PROJECT" add -A
+if (cd "$PROJECT" && TEST_MARKER="$PROJECT/test-marker" sh scripts/discuz-x5-verify.sh >/dev/null 2>&1); then
+  echo 'Expected staged renamed invalid PHP to fail.' >&2
+  exit 1
+fi
+git -C "$PROJECT" reset --hard HEAD >/dev/null
+
 mkdir -p "$PROJECT/data/cache"
 printf '%s\n' generated > "$PROJECT/data/cache/cache_demo.php"
 if (cd "$PROJECT" && TEST_MARKER="$PROJECT/test-marker" sh scripts/discuz-x5-verify.sh >/dev/null 2>&1); then

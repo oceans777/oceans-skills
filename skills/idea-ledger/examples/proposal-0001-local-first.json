@@ -1,0 +1,29 @@
+{
+  "title": "工作区默认仅本地保存",
+  "goal": "在没有额外授权时保护用户工作区内容。",
+  "decision": "新工作区默认仅存储在当前设备，不进行云端上传。",
+  "rationale": "本地默认值能够降低未授权披露风险，同时为后续显式同步保留空间。",
+  "outcome": "用户未启用同步时，工作区内容不会离开当前设备。",
+  "scope": ["存储", "隐私", "默认值"],
+  "tags": ["local-first"],
+  "constraints": ["任何远端传输都需要单独、明确的用户授权。"],
+  "acceptance_criteria": ["创建新工作区后没有内容上传请求。"],
+  "alternatives_considered": ["默认云同步并提供退出选项"],
+  "tradeoffs": ["跨设备连续性需要用户额外启用同步。"],
+  "non_goals": ["本决策不选择未来同步服务商。"],
+  "sources": ["产品隐私评审"],
+  "owner": "Product",
+  "review_at": null,
+  "conflict": {
+    "compatibility": "compatible",
+    "reviewed_ids": [],
+    "conflicts_with": [],
+    "rationale": "当前账本中没有需要比较的更早决策。",
+    "confidence": "high",
+    "disposition": "none",
+    "mitigation": null
+  },
+  "supersedes": [],
+  "depends_on": [],
+  "notes": []
+}

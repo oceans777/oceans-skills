@@ -36,3 +36,19 @@ jobs:
       - name: Run PowerShell tests
         shell: pwsh
         run: .\tests\test-agent-operating-system.ps1
+
+  idea-ledger:
+    name: Idea Ledger (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Show Python version
+        run: python --version
+      - name: Compile Idea Ledger
+        run: python -m compileall -q skills/idea-ledger/scripts
+      - name: Run Idea Ledger tests
+        run: python -m unittest discover -s skills/idea-ledger/tests -p "test_*.py" -v

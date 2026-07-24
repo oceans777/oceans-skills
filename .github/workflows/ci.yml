@@ -8,12 +8,17 @@ permissions:
   contents: read
 
 jobs:
-  shell:
+  shell-tests:
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
+        test:
+          - test-agent-operating-system.sh
+          - test-discuz-x5.sh
+          - test-first-party-contracts.sh
+    name: shell (${{ matrix.os }}, ${{ matrix.test }})
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -24,16 +29,36 @@ jobs:
           for skill in skills/*; do
             test -f "$skill/SKILL.md"
           done
-      - name: Run Shell tests
+      - name: Run test
         shell: sh
-        run: |
-          for test_file in tests/test-*.sh; do
-            echo "==> $test_file"
-            sh "$test_file"
-          done
+        run: sh "tests/${{ matrix.test }}"
 
-  powershell:
+  powershell-parse:
+    timeout-minutes: 10
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Parse PowerShell files
+        shell: pwsh
+        run: |
+          Get-ChildItem -Recurse -Filter *.ps1 | ForEach-Object {
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$errors) | Out-Null
+            if ($errors) { throw ($errors | Out-String) }
+          }
+
+  powershell-tests:
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - test-agent-operating-system.ps1
+          - test-discuz-x5.ps1
+          - test-first-party-contracts.ps1
+    name: powershell (${{ matrix.test }})
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -47,18 +72,6 @@ jobs:
               throw "Missing SKILL.md: $($_.Name)"
             }
           }
-      - name: Parse PowerShell files
+      - name: Run test
         shell: pwsh
-        run: |
-          Get-ChildItem -Recurse -Filter *.ps1 | ForEach-Object {
-            $errors = $null
-            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$errors) | Out-Null
-            if ($errors) { throw ($errors | Out-String) }
-          }
-      - name: Run PowerShell tests
-        shell: pwsh
-        run: |
-          Get-ChildItem tests -Filter 'test-*.ps1' | Sort-Object Name | ForEach-Object {
-            Write-Host "==> $($_.FullName)"
-            & $_.FullName
-          }
+        run: "& .\\tests\\${{ matrix.test }}"

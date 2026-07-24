@@ -1,6 +1,6 @@
 interface:
   display_name: "Discuz X5 Development"
-  short_description: "Discuz X5 plugin/template engineering guardrails"
-  default_prompt: "Use $discuz-x5 to implement or review a Discuz X5 plugin/template change."
+  short_description: "Discuz X5 engineering, security, and packaging guardrails."
+  default_prompt: "Use $discuz-x5 to implement or review a Discuz X5 change. Keep repository workflow policy outside this skill and configure verification through .discuz-x5-skill.conf."
 policy:
   allow_implicit_invocation: true

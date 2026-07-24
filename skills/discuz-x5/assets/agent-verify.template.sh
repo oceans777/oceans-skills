@@ -67,7 +67,7 @@ if git diff --cached --quiet --; then
   awk 'length($0)>=4 { status=substr($0,1,2); path=substr($0,4); if (index(path," -> ")) { n=split(path,a," -> "); path=a[n] } print status "\t" path }' "$status_file" > "$files_file"
   diff_args=''
 else
-  git diff --cached --name-status --diff-filter=ACMRD > "$files_file"
+  git diff --cached --name-status --diff-filter=ACMRD | awk -F "\t" 'NF >= 2 { print $1 "\t" $NF }' > "$files_file"
   diff_args='--cached'
 fi
 

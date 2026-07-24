@@ -51,4 +51,17 @@ jobs:
       - name: Compile Idea Ledger
         run: python -m compileall -q skills/idea-ledger/scripts
       - name: Run Idea Ledger tests
-        run: python -m unittest discover -s skills/idea-ledger/tests -p "test_*.py" -v
+        shell: bash
+        run: |
+          set +e
+          python -m unittest discover -s skills/idea-ledger/tests -p "test_*.py" -v > idea-ledger-test-output.txt 2>&1
+          code=$?
+          cat idea-ledger-test-output.txt
+          exit "$code"
+      - name: Upload Idea Ledger test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: idea-ledger-${{ matrix.os }}
+          path: idea-ledger-test-output.txt
+          if-no-files-found: error

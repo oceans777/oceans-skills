@@ -1,0 +1,10 @@
+{
+  "name": "idea-ledger",
+  "version": "2.1.0",
+  "description": "显式审查、记录和批准关键产品决策；在写入前验证完整关系图，并提供证据化冲突分析、可追溯依赖和可选严格 CI。",
+  "author": {
+    "name": "Idea Ledger"
+  },
+  "license": "MIT",
+  "skills": "./skills/"
+}

@@ -79,6 +79,40 @@ class WorkflowAndGraphTests(LedgerCase):
         with self.assertRaisesRegex(LEDGER.LedgerError, "至少需要一项"):
             LEDGER.revise_record(self.root, idea_id, revised)
 
+    def test_new_and_revised_proposals_require_a_governing_charter(self) -> None:
+        payload = self.payload()
+        payload.pop("charter")
+        with self.assertRaisesRegex(LEDGER.LedgerError, "总纲领"):
+            self.new(payload)
+
+        idea_id = str(self.new(self.payload("Existing"))["id"])
+        revised = self.payload("Existing revised")
+        revised.pop("charter")
+        with self.assertRaisesRegex(LEDGER.LedgerError, "总纲领"):
+            LEDGER.revise_record(self.root, idea_id, revised)
+
+    def test_charter_is_compact_and_precedes_generated_detail(self) -> None:
+        payload = self.payload()
+        payload["charter"]["scope"] = [f"scope-{index}" for index in range(6)]
+        with self.assertRaisesRegex(LEDGER.LedgerError, "最多 5 项"):
+            self.new(payload)
+
+        payload = self.payload()
+        payload["charter"]["goal"] = "line one\nline two"
+        result = self.new(payload)
+        text = LEDGER.record_path(self.root, str(result["id"])).read_text(encoding="utf-8")
+        self.assertLess(text.index("## 总纲领（管理员与操作者先看）"), text.index("## 具体方案"))
+        self.assertLess(text.index("## 具体方案"), text.index("## 验收标准"))
+
+    def test_legacy_record_without_charter_remains_valid(self) -> None:
+        idea_id = str(self.new(self.payload())["id"])
+        path = LEDGER.record_path(self.root, idea_id)
+        meta = LEDGER.load_record(path)
+        meta.pop("charter")
+        path.write_text(LEDGER.render_record(meta), encoding="utf-8", newline="\n")
+        LEDGER.refresh_index(self.root)
+        self.assertEqual([], LEDGER.validate_ledger(self.root))
+
     def test_legacy_proposal_without_acceptance_criteria_cannot_be_accepted(self) -> None:
         idea_id = str(self.new(self.payload())["id"])
         path = LEDGER.record_path(self.root, idea_id)

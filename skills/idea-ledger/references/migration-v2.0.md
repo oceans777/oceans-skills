@@ -1,29 +1,29 @@
-# Migration from v2.0 to v2.2
+# Migration from v2.0 to v2.3
 
-v2.2 keeps record `schema: 2` and is designed to read existing v2.0 ledgers without rewriting accepted or rejected files.
+v2.3 keeps record `schema: 2` and is designed to read existing v2.0-v2.2 ledgers without rewriting accepted or rejected files.
 
 ## Before upgrading
 
 1. Create a branch or filesystem backup.
 2. Record the current `VERSION`, `.idea-ledger/config.json`, record directory, index, and PRD directory.
 3. Confirm no Idea Ledger command is currently running.
-4. Replace the v2.0 skill/plugin files with the v2.2 package. Do not overwrite project records with package examples.
+4. Replace the v2.0 skill/plugin files with the v2.3 package. Do not overwrite project records with package examples.
 
 ## First run
 
 From the project root:
 
 ```bash
-python3 path/to/v2.2/idea_ledger.py status --root .
-python3 path/to/v2.2/idea_ledger.py refresh-index --root .
-python3 path/to/v2.2/idea_ledger.py validate --root .
+python3 path/to/v2.3/idea_ledger.py status --root .
+python3 path/to/v2.3/idea_ledger.py refresh-index --root .
+python3 path/to/v2.3/idea_ledger.py validate --root .
 ```
 
-The v2.0 index format differs from v2.2, so `validate` may initially report a stale index. Running `refresh-index` is the expected migration step.
+The v2.0 index format differs from v2.3, so `validate` may initially report a stale index. Running `refresh-index` is the expected migration step.
 
 ## Compatibility behavior
 
-v2.2 reads:
+v2.3 reads:
 
 - existing schema-2 record metadata;
 - v2.0 `conflict.kind` objects;
@@ -34,11 +34,11 @@ In memory:
 - legacy conflicts are mapped to the new compatibility/disposition model;
 - string dependencies are treated as `lineage`.
 
-Existing terminal record files are not automatically rewritten. New records and revised proposed records use the current canonical forms and require acceptance criteria.
+Existing terminal record files are not automatically rewritten. New records and revised proposed records require a governing charter plus acceptance criteria generated from it.
 
 ## New invariants that may expose an old problem
 
-`validate` may report a ledger that v2.0 accepted but v2.2 considers globally inconsistent, for example:
+`validate` may report a ledger that v2.0 accepted but v2.3 considers globally inconsistent, for example:
 
 - the same ID appears in `supersedes` and `depends_on`;
 - two accepted records supersede the same target;
@@ -102,7 +102,7 @@ If comparison shows no actual incompatibility, use `compatible/none`, retain the
 
 ## Strict CI migration
 
-v2.2 strict mode is stronger than v2.0:
+v2.3 strict mode is stronger than v2.0:
 
 - rejected records are protected in addition to accepted records;
 - branch-local terminal history is checked commit by commit;

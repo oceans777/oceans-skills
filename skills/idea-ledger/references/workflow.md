@@ -1,4 +1,4 @@
-# Workflow and review rubric — v2.2
+# Workflow and review rubric — v2.3
 
 ## Purpose
 
@@ -6,11 +6,12 @@ The ledger exists to reduce future decision ambiguity. It is not a transcript, t
 
 A useful record should let a future contributor answer:
 
-1. What rule was selected?
-2. Why was it selected?
-3. What scope, constraints, trade-offs, and non-goals apply?
-4. Which earlier records were reviewed, conflicted with, superseded, or depended on?
-5. Which decision is currently effective?
+1. What governing charter did administrators and operators align?
+2. What detailed rule and acceptance criteria were generated from it?
+3. Why was it selected?
+4. What scope, constraints, trade-offs, and non-goals apply?
+5. Which earlier records were reviewed, conflicted with, superseded, or depended on?
+6. Which decision is currently effective?
 
 ## Materiality test
 
@@ -26,18 +27,20 @@ Routine refactors, formatting, explanations, summaries, translations, and implem
 
 ## Review sequence
 
-1. Restate the candidate as goal, decision, rationale, outcome, scope, non-goals, constraints, trade-offs, and acceptance criteria.
-2. Use `context` for a bounded related set.
-3. Read every cited record in full with `show`.
-4. Compare concrete clauses and applicability, not only keywords.
-5. Record all reviewed IDs; put only genuine conflicts in `conflicts_with`.
-6. Select compatibility, disposition, mitigation, and confidence independently.
-7. Express dependencies as `lineage` or `exact` deliberately.
-8. Keep automatic discovery read-only; save only when the user's natural-language intent clearly requests persistence.
-9. Require at least one observable, falsifiable acceptance criterion before any proposal write or acceptance.
-10. Accept natural-language approval only when the current message unambiguously finalizes exactly one proposal; pass it without paraphrasing and allow only canonical whitespace normalization.
-11. Use a new record for any later material change.
-12. After every write, run `validate` and report success only when it passes.
+1. Write the concise governing charter: goal, actors, scope, principles, and non-goals.
+2. Align that charter before generating detailed solution content.
+3. Generate the detailed goal, scenarios, decision, rationale, outcome, constraints, trade-offs, and acceptance criteria from the charter.
+4. Use `context` for a bounded related set.
+5. Read every cited record in full with `show`.
+6. Compare concrete clauses and applicability, not only keywords.
+7. Record all reviewed IDs; put only genuine conflicts in `conflicts_with`.
+8. Select compatibility, disposition, mitigation, and confidence independently.
+9. Express dependencies as `lineage` or `exact` deliberately.
+10. Keep automatic discovery read-only; save only when the user's natural-language intent clearly requests persistence.
+11. Require at least one observable, falsifiable acceptance criterion derived after charter alignment before any proposal write or acceptance.
+12. Accept natural-language approval only when the current message unambiguously finalizes exactly one proposal; pass it without paraphrasing and allow only canonical whitespace normalization.
+13. Use a new record for any later material change, starting again from the charter when its upstream intent changes.
+14. After every write, run `validate` and report success only when it passes.
 
 ## Acceptance criteria gate
 

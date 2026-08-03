@@ -68,6 +68,17 @@ class RetrievalAuditAndPrdTests(LedgerCase):
         self.assertEqual(original, path.read_text(encoding="utf-8"))
         self.assertEqual([], LEDGER.validate_ledger(self.root))
 
+    def test_prd_starts_with_charter_before_detailed_plan_and_acceptance(self) -> None:
+        idea_id = str(self.new(self.payload())["id"])
+        self.accept(idea_id)
+        text = LEDGER.create_prd_template(self.root, idea_id).read_text(encoding="utf-8")
+        charter_at = text.index("## 总纲领（管理员与操作者先看）")
+        plan_at = text.index("## 5. 功能需求")
+        acceptance_at = text.index("## 7. 验收标准")
+        self.assertLess(charter_at, plan_at)
+        self.assertLess(plan_at, acceptance_at)
+        self.assertIn("详细方案与验收标准必须遵循此总纲领", text)
+
     def test_prd_staleness_is_blocked_before_supersession_write(self) -> None:
         old = str(self.new(self.payload("Old"))["id"])
         self.accept(old)

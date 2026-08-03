@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic, project-local storage and validation for Idea Ledger v2.2.
+"""Deterministic, project-local storage and validation for Idea Ledger v2.3.
 
 The core module performs no Git subprocesses and never initializes, stages,
 commits, resets, restores, cleans, or rewrites repository configuration.
@@ -31,7 +31,7 @@ try:  # Windows
 except ImportError:  # pragma: no cover - exercised on POSIX
     msvcrt = None  # type: ignore[assignment]
 
-VERSION = "2.2.0"
+VERSION = "2.3.0"
 # Schema 2 remains readable so v2.0 ledgers do not require an in-place rewrite.
 SCHEMA_VERSION = 2
 CONFIG_DIR = ".idea-ledger"
@@ -111,6 +111,7 @@ REQUIRED_RECORD_META_FIELDS = {
     "notes",
 }
 OPTIONAL_RECORD_META_FIELDS = {
+    "charter",
     "rationale",
     "alternatives_considered",
     "tradeoffs",
@@ -119,6 +120,7 @@ OPTIONAL_RECORD_META_FIELDS = {
     "owner",
     "review_at",
 }
+CHARTER_FIELDS = {"goal", "actors", "scope", "principles", "non_goals"}
 RECORD_META_FIELDS = REQUIRED_RECORD_META_FIELDS | OPTIONAL_RECORD_META_FIELDS
 
 

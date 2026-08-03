@@ -1,20 +1,20 @@
 # Verification
 
-The repository-native v2.2.0 package is verified with:
+The repository-native v2.3.0 package is verified with:
 
 ```bash
 python3 -m py_compile scripts/*.py
 python3 -m unittest discover -s tests -p "test_*.py" -v
 ```
 
-Expected result: 55 tests pass.
+Expected result: 60 tests pass.
 
 The suite verifies:
 
 - no unintended Git or global side effects;
 - implicit material-decision routing metadata with read-only discovery boundaries;
 - path, symlink, lock, and configuration hardening;
-- required acceptance criteria, natural-language approval evidence, generic-reply rejection, and multi-proposal disambiguation;
+- charter-first generation order, required acceptance criteria, natural-language approval evidence, generic-reply rejection, and multi-proposal disambiguation;
 - terminal immutability and supersession-derived state;
 - candidate graph validation before writes;
 - `lineage` and `exact` dependency behavior and cycle rejection;

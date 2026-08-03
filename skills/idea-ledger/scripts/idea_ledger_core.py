@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Public deterministic core API for Idea Ledger v2.2.
+"""Public deterministic core API for Idea Ledger v2.3.
 
 Implementation is separated by responsibility to keep each module reviewable:
 foundation, path/locking rules, normalization, record rendering, graph

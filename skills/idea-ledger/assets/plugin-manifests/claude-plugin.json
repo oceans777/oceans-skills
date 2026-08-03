@@ -1,7 +1,7 @@
 {
   "name": "idea-ledger",
-  "version": "2.2.0",
-  "description": "自动识别并审查关键产品决策；以自然语言意图控制写入和批准，并强制可验证验收标准、关系图与审计证据。",
+  "version": "2.3.0",
+  "description": "先生成并对齐总纲领，再据此生成详细方案、验收标准并管理决策证据。",
   "author": {
     "name": "Idea Ledger"
   },

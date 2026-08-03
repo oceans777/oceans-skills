@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Optional, read-only Git/CI policy checks for Idea Ledger v2.2."""
+"""Optional, read-only Git/CI policy checks for Idea Ledger v2.3."""
 from __future__ import annotations
 
 import hashlib

@@ -1,6 +1,6 @@
 interface:
   display_name: "Idea Ledger"
-  short_description: "自动识别并审查关键产品决策，安全记录自然语言意图"
-  default_prompt: "使用 $idea-ledger 审查这项产品决策，补齐可验证的验收标准；只有我的自然语言意图明确时才写入。"
+  short_description: "先定总纲领，再生成并记录详细方案与验收标准"
+  default_prompt: "使用 $idea-ledger 先生成十行内总纲领；确认后再据此生成详细方案和验收标准。"
 policy:
   allow_implicit_invocation: true

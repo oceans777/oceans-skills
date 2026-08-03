@@ -135,7 +135,7 @@ def list_record_paths(root: Path, config: dict[str, Any] | None = None) -> list[
         if path.is_symlink():
             raise LedgerError(f"记录文件不得是符号链接：{path}")
         try:
-            info = path.stat(follow_symlinks=False)
+            info = path.lstat()
         except OSError as exc:
             raise LedgerError(f"无法检查记录文件：{path}：{exc}") from exc
         if not stat.S_ISREG(info.st_mode):

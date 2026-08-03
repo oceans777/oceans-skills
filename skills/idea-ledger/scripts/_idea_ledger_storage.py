@@ -122,12 +122,61 @@ def evidence_matches(idea_id: str, evidence: str) -> bool:
     return normalized in {f"批准 {target}".upper(), f"APPROVE {target}"}
 
 
-def accept_record(root: Path, idea_id: str, evidence: str) -> dict[str, Any]:
+GENERIC_APPROVAL_EVIDENCE = {
+    "可以",
+    "继续",
+    "好",
+    "好的",
+    "同意",
+    "OK",
+    "OKAY",
+    "YES",
+    "Y",
+}
+APPROVAL_ID_RE = re.compile(r"IDEA[\s_-]*0*(\d+)", re.IGNORECASE)
+
+
+def approval_evidence_ids(evidence: str) -> list[str]:
+    result: list[str] = []
+    for match in APPROVAL_ID_RE.finditer(evidence):
+        idea_id = normalize_id(f"IDEA-{match.group(1)}")
+        if idea_id not in result:
+            result.append(idea_id)
+    return result
+
+
+def generic_approval_text(evidence: str) -> str:
+    without_ids = APPROVAL_ID_RE.sub("", evidence)
+    return normalize_approval_evidence(without_ids).strip(" :-：")
+
+
+def _approval_method(idea_id: str, evidence: str, approval_mode: str) -> str:
+    mode = str(approval_mode or "auto").strip().lower().replace("-", "_")
+    if mode not in {"auto", *APPROVAL_METHODS}:
+        raise LedgerError("approval_mode 必须是 auto、explicit_phrase 或 natural_language_intent。")
+    if evidence_matches(idea_id, evidence):
+        return "explicit_phrase"
+    if mode != "natural_language_intent":
+        raise LedgerError(
+            "非固定格式的批准必须由代理确认自然语言意图，并使用 approval_mode=natural_language_intent。"
+        )
+    message = clean_string(evidence, "approval evidence", maximum=2000, single_line=True)
+    if generic_approval_text(message) in GENERIC_APPROVAL_EVIDENCE:
+        raise LedgerError("批准表达过于模糊；“可以/继续/OK/同意”等通用回复不能批准记录。")
+    return "natural_language_intent"
+
+
+def accept_record(
+    root: Path,
+    idea_id: str,
+    evidence: str,
+    *,
+    approval_mode: str = "auto",
+) -> dict[str, Any]:
     root = ensure_root(root)
     config = load_config(root)
     idea_id = normalize_id(idea_id)
-    if not evidence_matches(idea_id, evidence):
-        raise LedgerError(f"批准语句必须精确为“批准 {idea_id}”或“APPROVE {idea_id}”；“可以/继续/OK”无效。")
+    method = _approval_method(idea_id, evidence, approval_mode)
     with ledger_lock(root):
         existing_items = load_records(root, config)
         existing = {item["meta"]["id"]: item for item in existing_items}
@@ -137,6 +186,24 @@ def accept_record(root: Path, idea_id: str, evidence: str) -> dict[str, Any]:
         meta = copy.deepcopy(item["meta"])
         if meta["status"] != "proposed":
             raise LedgerError(f"只有 proposed 记录可以批准；{idea_id} 当前为 {meta['status']}。")
+        if not meta.get("acceptance_criteria"):
+            raise LedgerError(f"{idea_id} 缺少验收标准；先 revise 补充至少一项可验证标准。")
+        if method == "natural_language_intent":
+            mentioned_ids = approval_evidence_ids(evidence)
+            if mentioned_ids and idea_id not in mentioned_ids:
+                raise LedgerError(
+                    f"自然语言批准提到的是 {'、'.join(mentioned_ids)}，与目标 {idea_id} 不一致。"
+                )
+            if not mentioned_ids:
+                proposed_ids = [
+                    candidate["meta"]["id"]
+                    for candidate in existing_items
+                    if candidate["meta"].get("status") == "proposed"
+                ]
+                if proposed_ids != [idea_id]:
+                    raise LedgerError(
+                        "自然语言批准未指明记录，且当前并非只有一个 proposed 候选；请先消歧具体 IDEA 编号。"
+                    )
         approvable, classification = conflict_is_approvable(meta)
         if not approvable:
             raise LedgerError(f"{idea_id} 的冲突处置为 {classification}，不能直接批准；先 revise 补充可执行处置。")
@@ -144,12 +211,21 @@ def accept_record(root: Path, idea_id: str, evidence: str) -> dict[str, Any]:
         meta["status"] = "accepted"
         meta["accepted_at"] = now
         meta["updated_at"] = now
-        meta["approval"] = {
-            "method": "explicit_phrase",
-            "recorded_phrase": normalize_approval_evidence(evidence),
-            "actor_verified": False,
-            "recorded_at": now,
-        }
+        if method == "explicit_phrase":
+            meta["approval"] = {
+                "method": method,
+                "recorded_phrase": normalize_approval_evidence(evidence),
+                "actor_verified": False,
+                "recorded_at": now,
+            }
+        else:
+            meta["approval"] = {
+                "method": method,
+                "recorded_message": clean_string(evidence, "approval evidence", maximum=2000, single_line=True),
+                "resolved_record": idea_id,
+                "actor_verified": False,
+                "recorded_at": now,
+            }
         candidate = _candidate_records(existing_items, meta, item["path"])
         _write_candidate(root, config, item["path"], meta, candidate, create_only=False)
         return {"id": idea_id, "path": str(item["path"]), "status": "accepted", "meta": meta}

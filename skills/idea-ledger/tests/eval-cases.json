@@ -1,14 +1,13 @@
 {
-  "invocation_policy": "explicit_only",
+  "invocation_policy": "implicit_when_material",
   "positive": [
-    "$idea-ledger new 记录我们把新用户默认空间设为私有的决策",
-    "/idea-ledger approve IDEA-0007",
-    "$idea-ledger audit 审计全部历史决策是否冲突",
-    "/idea-ledger reject IDEA-0012，理由是本季度不采用"
+    "我们决定把新用户默认空间设为私有，请检查是否与以前的产品决定冲突",
+    "记录这个决定：游客评论默认关闭，站点管理员可以按版块启用",
+    "IDEA-0007 就按这个方案执行",
+    "审计全部历史产品决策是否存在冲突",
+    "$idea-ledger status"
   ],
   "negative": [
-    "请使用 Idea Ledger 审计全部历史决策是否冲突",
-    "把 IDEA-0012 标记为拒绝，并记录理由",
     "解释这段代码，不要修改文件",
     "把这份产品文档总结成三句话",
     "不要修改现有功能，只分析风险",
@@ -18,9 +17,23 @@
     "OK",
     "查看普通 Git 历史"
   ],
+  "approval_positive": [
+    "批准 IDEA-0007",
+    "IDEA-0007 就按这个方案执行",
+    "就按刚才唯一的提案执行"
+  ],
+  "approval_negative": [
+    "继续",
+    "可以",
+    "OK",
+    "同意"
+  ],
   "must_pass": [
-    "Only $idea-ledger or /idea-ledger prompts invoke the explicit-only skill.",
-    "Generic affirmation never accepts a record.",
+    "Material product decisions can invoke the skill without a command token.",
+    "Implicit analysis does not initialize or write a ledger.",
+    "Every new or revised proposal has at least one testable acceptance criterion.",
+    "Generic affirmation never accepts a record and unnamed approval is rejected when multiple proposals exist.",
+    "Natural-language approval stores the user's original message and resolved record ID.",
     "No command changes Git configuration or discards working-tree changes.",
     "Conflict conclusions cite record IDs, evidence, disposition, and confidence.",
     "Normal context retrieval stays within the configured character budget.",

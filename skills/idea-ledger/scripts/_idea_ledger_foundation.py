@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic, project-local storage and validation for Idea Ledger v2.1.
+"""Deterministic, project-local storage and validation for Idea Ledger v2.2.
 
 The core module performs no Git subprocesses and never initializes, stages,
 commits, resets, restores, cleans, or rewrites repository configuration.
@@ -31,7 +31,7 @@ try:  # Windows
 except ImportError:  # pragma: no cover - exercised on POSIX
     msvcrt = None  # type: ignore[assignment]
 
-VERSION = "2.1.0"
+VERSION = "2.2.0"
 # Schema 2 remains readable so v2.0 ledgers do not require an in-place rewrite.
 SCHEMA_VERSION = 2
 CONFIG_DIR = ".idea-ledger"
@@ -81,7 +81,11 @@ CONFLICT_FIELDS = {
     "disposition",
     "mitigation",
 }
-APPROVAL_FIELDS = {"method", "recorded_phrase", "actor_verified", "recorded_at"}
+APPROVAL_METHODS = {"explicit_phrase", "natural_language_intent"}
+APPROVAL_COMMON_FIELDS = {"method", "actor_verified", "recorded_at"}
+EXPLICIT_APPROVAL_FIELDS = APPROVAL_COMMON_FIELDS | {"recorded_phrase"}
+NATURAL_LANGUAGE_APPROVAL_FIELDS = APPROVAL_COMMON_FIELDS | {"recorded_message", "resolved_record"}
+APPROVAL_FIELDS = EXPLICIT_APPROVAL_FIELDS | NATURAL_LANGUAGE_APPROVAL_FIELDS
 REQUIRED_RECORD_META_FIELDS = {
     "schema",
     "id",
@@ -195,7 +199,7 @@ def _is_within(path: Path, parent: Path) -> bool:
 def _validate_existing_kind(path: Path, label: str, *, directory: bool) -> None:
     if not path.exists():
         return
-    info = path.stat(follow_symlinks=False)
+    info = path.lstat()
     if directory and not stat.S_ISDIR(info.st_mode):
         raise LedgerError(f"{label} 必须是目录：{path}")
     if not directory and not stat.S_ISREG(info.st_mode):
@@ -268,7 +272,7 @@ def atomic_write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     mode = 0o644
     try:
-        info = path.stat(follow_symlinks=False)
+        info = path.lstat()
     except FileNotFoundError:
         pass
     else:

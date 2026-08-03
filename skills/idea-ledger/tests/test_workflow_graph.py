@@ -5,14 +5,89 @@ class WorkflowAndGraphTests(LedgerCase):
         super().setUp()
         self.init()
 
-    def test_exact_record_specific_approval_is_required(self) -> None:
+    def test_generic_approval_is_rejected_and_exact_phrase_remains_valid(self) -> None:
         idea_id = str(self.new(self.payload())["id"])
-        with self.assertRaisesRegex(LEDGER.LedgerError, "精确"):
+        with self.assertRaisesRegex(LEDGER.LedgerError, "natural_language_intent"):
             LEDGER.accept_record(self.root, idea_id, "可以")
-        with self.assertRaisesRegex(LEDGER.LedgerError, "精确"):
-            LEDGER.accept_record(self.root, idea_id, f"批准: {idea_id}")
+        with self.assertRaisesRegex(LEDGER.LedgerError, "模糊"):
+            LEDGER.accept_record(
+                self.root,
+                idea_id,
+                "可以",
+                approval_mode="natural_language_intent",
+            )
         accepted = LEDGER.accept_record(self.root, idea_id, f"批准  {idea_id}。")
         self.assertEqual("accepted", accepted["status"])
+
+    def test_unambiguous_natural_language_approval_preserves_raw_message(self) -> None:
+        idea_id = str(self.new(self.payload())["id"])
+        message = "就按刚才这个方案执行"
+        accepted = LEDGER.accept_record(
+            self.root,
+            idea_id,
+            message,
+            approval_mode="natural_language_intent",
+        )
+        approval = accepted["meta"]["approval"]
+        self.assertEqual("natural_language_intent", approval["method"])
+        self.assertEqual(message, approval["recorded_message"])
+        self.assertEqual(idea_id, approval["resolved_record"])
+        self.assertEqual([], LEDGER.validate_ledger(self.root))
+
+    def test_unnamed_natural_language_approval_requires_single_proposal(self) -> None:
+        first = str(self.new(self.payload("First"))["id"])
+        second = str(self.new(self.payload("Second"))["id"])
+        with self.assertRaisesRegex(LEDGER.LedgerError, "消歧"):
+            LEDGER.accept_record(
+                self.root,
+                first,
+                "就按刚才这个方案执行",
+                approval_mode="natural_language_intent",
+            )
+        with self.assertRaisesRegex(LEDGER.LedgerError, "目标.*不一致"):
+            LEDGER.accept_record(
+                self.root,
+                first,
+                f"就按 {second} 这个方案执行",
+                approval_mode="natural_language_intent",
+            )
+        with self.assertRaisesRegex(LEDGER.LedgerError, "模糊"):
+            LEDGER.accept_record(
+                self.root,
+                first,
+                f"同意 {first}",
+                approval_mode="natural_language_intent",
+            )
+        accepted = LEDGER.accept_record(
+            self.root,
+            first,
+            f"就按 {first} 这个方案执行",
+            approval_mode="natural_language_intent",
+        )
+        self.assertEqual("accepted", accepted["status"])
+        self.assertEqual("proposed", LEDGER.load_record(LEDGER.record_path(self.root, second))["status"])
+
+    def test_new_and_revised_proposals_require_acceptance_criteria(self) -> None:
+        payload = self.payload()
+        payload["acceptance_criteria"] = []
+        with self.assertRaisesRegex(LEDGER.LedgerError, "至少需要一项"):
+            self.new(payload)
+
+        idea_id = str(self.new(self.payload("Existing"))["id"])
+        revised = self.payload("Existing revised")
+        revised["acceptance_criteria"] = []
+        with self.assertRaisesRegex(LEDGER.LedgerError, "至少需要一项"):
+            LEDGER.revise_record(self.root, idea_id, revised)
+
+    def test_legacy_proposal_without_acceptance_criteria_cannot_be_accepted(self) -> None:
+        idea_id = str(self.new(self.payload())["id"])
+        path = LEDGER.record_path(self.root, idea_id)
+        meta = LEDGER.load_record(path)
+        meta["acceptance_criteria"] = []
+        path.write_text(LEDGER.render_record(meta), encoding="utf-8", newline="\n")
+        LEDGER.refresh_index(self.root)
+        with self.assertRaisesRegex(LEDGER.LedgerError, "缺少验收标准"):
+            self.accept(idea_id)
 
     def test_unresolved_conflicts_cannot_be_accepted(self) -> None:
         first = str(self.new(self.payload("Existing"))["id"])

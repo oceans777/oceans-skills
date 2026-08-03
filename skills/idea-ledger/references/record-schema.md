@@ -1,6 +1,6 @@
-# Record schema — v2.1
+# Record schema — v2.2
 
-`new` and `revise` accept one JSON object. Unknown fields are rejected so schema drift remains visible. New writes use the v2.1 conflict and dependency forms; v2.0 forms remain readable for migration compatibility.
+`new` and `revise` accept one JSON object. Unknown fields are rejected so schema drift remains visible. New writes use the current conflict and dependency forms; v2.0/v2.1 records remain readable for migration compatibility.
 
 ## Required proposal fields
 
@@ -11,6 +11,10 @@
   "decision": "Add encrypted cloud sync, disabled by default, with per-workspace opt-in.",
   "outcome": "Opted-in workspaces converge without uploading local-only workspaces.",
   "scope": ["sync", "storage", "privacy"],
+  "acceptance_criteria": [
+    "A new workspace uploads no data before explicit opt-in.",
+    "Two opted-in devices converge after reconnecting."
+  ],
   "conflict": {
     "compatibility": "compatible",
     "reviewed_ids": ["IDEA-0003"],
@@ -30,7 +34,10 @@ Required fields are:
 - `decision`: the rule future work must follow;
 - `outcome`: expected observable result;
 - `scope`: one or more applicability labels;
+- `acceptance_criteria`: one or more observable pass/fail conditions;
 - `conflict`: structured review result.
+
+Each acceptance criterion must be falsifiable from behavior, a metric, a state transition, or durable evidence. Vague claims such as “works well” are not sufficient without an observable result or threshold.
 
 ## Optional proposal fields
 
@@ -41,10 +48,6 @@ Required fields are:
   "constraints": [
     "Encryption in transit and at rest is mandatory.",
     "A user can return a workspace to local-only mode."
-  ],
-  "acceptance_criteria": [
-    "A new workspace uploads no data before explicit opt-in.",
-    "Two opted-in devices converge after reconnecting."
   ],
   "alternatives_considered": ["Device-to-device transfer only"],
   "tradeoffs": ["Adds cloud operating cost in exchange for cross-device continuity"],
@@ -179,7 +182,7 @@ Stored states:
 
 ## Approval evidence
 
-`accept` requires exactly one record-specific phrase, ignoring terminal punctuation and repeated whitespace:
+`accept` supports two evidence modes. The legacy exact phrase remains valid and is auto-detected:
 
 ```text
 批准 IDEA-0001
@@ -201,9 +204,33 @@ The accepted record stores:
 
 This is an audit trace only. It does not identify the speaker, prove authorization, or provide non-repudiation.
 
+For natural language, the model must first determine that the current user message unambiguously finalizes exactly one proposal, then pass that message without paraphrasing. The CLI normalizes whitespace for canonical storage.
+
+```bash
+python3 idea_ledger.py accept --root . --id IDEA-0001 \
+  --mode natural-language-intent \
+  --evidence "就按刚才这个方案执行"
+```
+
+The accepted record stores:
+
+```json
+{
+  "approval": {
+    "method": "natural_language_intent",
+    "recorded_message": "就按刚才这个方案执行",
+    "resolved_record": "IDEA-0001",
+    "actor_verified": false,
+    "recorded_at": "2026-08-03T12:34:56+00:00"
+  }
+}
+```
+
+The message is audit evidence, not deterministic proof of its meaning. The CLI blocks generic confirmations and blocks an unnamed target when multiple proposed records exist. The model must never rewrite or manufacture the recorded message.
+
 ## v2.0 compatibility
 
-v2.1 can read v2.0 `conflict.kind` objects and normalizes them in memory:
+v2.2 can read v2.0 `conflict.kind` objects and normalizes them in memory:
 
 - `none` → `compatible / none`;
 - `duplicate` → `duplicate / defer`;
@@ -214,4 +241,4 @@ v2.1 can read v2.0 `conflict.kind` objects and normalizes them in memory:
 - `resolved` without `supersedes` → `tension / bounded`;
 - `unknown` → `unknown / defer`.
 
-New or revised records are written in the v2.1 two-axis form.
+New or revised records are written in the current two-axis form and must contain acceptance criteria.

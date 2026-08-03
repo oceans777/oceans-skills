@@ -1,7 +1,7 @@
 {
   "name": "idea-ledger",
-  "version": "2.1.0",
-  "description": "显式审查、记录和批准关键产品决策；在写入前验证完整关系图，并提供证据化冲突分析、可追溯依赖和可选严格 CI。",
+  "version": "2.2.0",
+  "description": "自动识别并审查关键产品决策；以自然语言意图控制写入和批准，并强制可验证验收标准、关系图与审计证据。",
   "author": {
     "name": "Idea Ledger"
   },
@@ -16,8 +16,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Idea Ledger",
-    "shortDescription": "显式管理关键产品决策与全局关系一致性",
-    "longDescription": "把关键产品决策保存为项目内、结构化、可验证的记录；在任何终态写入前预演完整关系图，支持 lineage/exact 依赖、派生替代状态、完整审计与可选 Git CI 检查。默认只在显式调用时运行，不自动初始化 Git、修改 Git 配置、提交或撤销用户文件。",
+    "shortDescription": "自动识别关键产品决策并安全管理完整生命周期",
+    "longDescription": "自动识别重要产品决策并先做只读分析；仅在自然语言意图明确时写入或终结记录。每个新提案必须包含可验证验收标准，终态写入前预演完整关系图，并保留用户原始批准消息、可追溯依赖、派生替代状态、完整审计与可选 Git CI 检查。",
     "developerName": "Idea Ledger",
     "category": "Productivity",
     "capabilities": [
@@ -25,8 +25,8 @@
       "Write"
     ],
     "defaultPrompt": [
-      "使用 $idea-ledger new 审查并记录这项关键产品决策，不执行 Git 操作。",
-      "使用 $idea-ledger audit 对当前项目的全部决策记录做分页冲突审计。"
+      "使用 $idea-ledger 审查这项关键产品决策，补齐验收标准；只有我的自然语言意图明确时才写入。",
+      "使用 $idea-ledger 对当前项目的全部决策记录做分页冲突审计。"
     ]
   }
 }

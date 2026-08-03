@@ -206,20 +206,47 @@ def validate_meta_shape(meta: dict[str, Any], *, expected_id: str | None = None)
             if rejected_at_raw is not None or rejection_reason is not None:
                 errors.append("accepted 记录不得包含拒绝字段")
             if not isinstance(approval, dict):
-                errors.append("accepted 记录缺少显式批准记录")
+                errors.append("accepted 记录缺少批准记录")
             else:
-                approval_unknown = sorted(set(approval) - APPROVAL_FIELDS)
-                approval_missing = sorted(APPROVAL_FIELDS - set(approval))
+                method = approval.get("method")
+                expected_fields = (
+                    EXPLICIT_APPROVAL_FIELDS
+                    if method == "explicit_phrase"
+                    else NATURAL_LANGUAGE_APPROVAL_FIELDS
+                    if method == "natural_language_intent"
+                    else APPROVAL_COMMON_FIELDS
+                )
+                approval_unknown = sorted(set(approval) - expected_fields)
+                approval_missing = sorted(expected_fields - set(approval))
                 if approval_unknown:
                     errors.append("approval 包含未知字段：" + "、".join(approval_unknown))
                 if approval_missing:
                     errors.append("approval 缺少字段：" + "、".join(approval_missing))
-                if approval.get("method") != "explicit_phrase":
-                    errors.append("approval.method 必须是 explicit_phrase")
-                phrase = approval.get("recorded_phrase")
-                allowed_phrases = {f"批准 {idea_id}".upper(), f"APPROVE {idea_id}"}
-                if not isinstance(phrase, str) or phrase not in allowed_phrases:
-                    errors.append("approval.recorded_phrase 与记录编号不匹配")
+                if method not in APPROVAL_METHODS:
+                    errors.append("approval.method 无效")
+                elif method == "explicit_phrase":
+                    phrase = approval.get("recorded_phrase")
+                    allowed_phrases = {f"批准 {idea_id}".upper(), f"APPROVE {idea_id}"}
+                    if not isinstance(phrase, str) or phrase not in allowed_phrases:
+                        errors.append("approval.recorded_phrase 与记录编号不匹配")
+                else:
+                    try:
+                        message = clean_string(
+                            approval.get("recorded_message"),
+                            "approval.recorded_message",
+                            maximum=2000,
+                            single_line=True,
+                        )
+                        if approval.get("recorded_message") != message:
+                            errors.append("approval.recorded_message 未规范化")
+                    except LedgerError as exc:
+                        errors.append(str(exc))
+                    try:
+                        resolved = normalize_id(str(approval.get("resolved_record") or ""))
+                        if resolved != idea_id:
+                            errors.append("approval.resolved_record 与记录编号不匹配")
+                    except LedgerError as exc:
+                        errors.append(str(exc))
                 if approval.get("actor_verified") is not False:
                     errors.append("approval.actor_verified 必须为 false；CLI 不认证说话者身份")
                 recorded_at = parse_timestamp(approval.get("recorded_at"), "approval.recorded_at")

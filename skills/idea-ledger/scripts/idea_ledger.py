@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Idea Ledger v2.2 CLI: intent-aware routing over deterministic core and optional CI checks."""
+"""Idea Ledger v2.3 CLI: concise goal alignment over deterministic decision governance."""
 from __future__ import annotations
 
 import argparse
@@ -65,7 +65,7 @@ def add_root(parser: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Idea Ledger v2.2：意图感知、项目内、可审计的产品决策记录")
+    parser = argparse.ArgumentParser(description="Idea Ledger v2.3：先简短对齐目标，再管理项目内可审计产品决策")
     parser.add_argument("--version", action="version", version=VERSION)
     sub = parser.add_subparsers(dest="command", required=True)
 

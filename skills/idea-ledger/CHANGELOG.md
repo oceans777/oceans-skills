@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.3.0 — 2026-08-03
+
+- Adds a formal governing charter before any detailed solution or acceptance-criteria generation.
+- Limits the charter to Goal, Actors, Scope, Principles, Non-goals, and one confirmation question within 10 non-empty lines.
+- Makes the confirmed charter the upstream constraint from which the AI generates the complete decision and observable acceptance criteria.
+- Persists the charter at the top of new decision records and PRDs for administrators and operators.
+- Distinguishes charter confirmation from Ledger approval; generic confirmation never accepts a record.
+- Keeps legacy v2.2 records without a charter readable and canonically stable.
+
 ## 2.2.0 — 2026-08-03
 
 - Enables automatic routing for material product decisions while keeping implicit analysis read-only.

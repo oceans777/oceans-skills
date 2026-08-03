@@ -101,6 +101,13 @@ class LedgerCase(unittest.TestCase):
     ) -> dict[str, object]:
         return {
             "title": title,
+            "charter": {
+                "goal": f"Give operators a clear {word} product rule.",
+                "actors": ["Product administrators", "Operators"],
+                "scope": [f"The {word} behavior", "Its user-visible boundary"],
+                "principles": ["Detailed design and acceptance criteria must follow this charter."],
+                "non_goals": ["Implementation details are not decided in the charter."],
+            },
             "goal": f"Deliver {word} behavior safely.",
             "decision": long_decision or f"Use the reviewed {word} policy for this scope.",
             "rationale": f"The {word} policy balances the stated user and operational needs.",

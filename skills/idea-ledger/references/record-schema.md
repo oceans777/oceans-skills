@@ -1,12 +1,19 @@
-# Record schema — v2.2
+# Record schema — v2.3
 
-`new` and `revise` accept one JSON object. Unknown fields are rejected so schema drift remains visible. New writes use the current conflict and dependency forms; v2.0/v2.1 records remain readable for migration compatibility.
+`new` and `revise` accept one JSON object. Unknown fields are rejected so schema drift remains visible. New writes require a governing charter and use the current conflict and dependency forms; records created before v2.3 remain readable for migration compatibility.
 
 ## Required proposal fields
 
 ```json
 {
   "title": "Cross-device sync with explicit opt-in",
+  "charter": {
+    "goal": "Provide cross-device access without weakening the default local-only privacy boundary.",
+    "actors": ["Product administrators", "Operators", "Signed-in workspace users"],
+    "scope": ["Workspace-level sync opt-in", "Remote-copy deletion"],
+    "principles": ["Default off", "No upload before explicit opt-in"],
+    "non_goals": ["Collaborative editing"]
+  },
   "goal": "Let signed-in users access the same workspace on multiple devices.",
   "decision": "Add encrypted cloud sync, disabled by default, with per-workspace opt-in.",
   "outcome": "Opted-in workspaces converge without uploading local-only workspaces.",
@@ -30,6 +37,7 @@
 Required fields are:
 
 - `title`: single-line title;
+- `charter`: the concise, upstream authority confirmed before the AI generates the remaining fields;
 - `goal`: problem or objective;
 - `decision`: the rule future work must follow;
 - `outcome`: expected observable result;
@@ -38,6 +46,24 @@ Required fields are:
 - `conflict`: structured review result.
 
 Each acceptance criterion must be falsifiable from behavior, a metric, a state transition, or durable evidence. Vague claims such as “works well” are not sufficient without an observable result or threshold.
+
+## Governing charter
+
+The charter is written and aligned first. The AI then generates the detailed `goal`, `decision`, `outcome`, `constraints`, and `acceptance_criteria` from it. It must not create the detailed solution first and reverse-summarize it into a charter.
+
+```json
+{
+  "charter": {
+    "goal": "One sentence, maximum 240 characters.",
+    "actors": ["One to five roles"],
+    "scope": ["One to five product boundaries"],
+    "principles": ["One to five non-negotiable rules"],
+    "non_goals": ["Zero to three explicit exclusions"]
+  }
+}
+```
+
+New and revised records require this object. Stored records created before v2.3 may omit it and remain readable without rewriting immutable history.
 
 ## Optional proposal fields
 
@@ -228,9 +254,9 @@ The accepted record stores:
 
 The message is audit evidence, not deterministic proof of its meaning. The CLI blocks generic confirmations and blocks an unnamed target when multiple proposed records exist. The model must never rewrite or manufacture the recorded message.
 
-## v2.0 compatibility
+## Pre-v2.3 compatibility
 
-v2.2 can read v2.0 `conflict.kind` objects and normalizes them in memory:
+v2.3 can read v2.0 `conflict.kind` objects and normalizes them in memory:
 
 - `none` → `compatible / none`;
 - `duplicate` → `duplicate / defer`;
@@ -241,4 +267,4 @@ v2.2 can read v2.0 `conflict.kind` objects and normalizes them in memory:
 - `resolved` without `supersedes` → `tension / bounded`;
 - `unknown` → `unknown / defer`.
 
-New or revised records are written in the current two-axis form and must contain acceptance criteria.
+New or revised records are written in the current two-axis form and must contain a governing charter plus acceptance criteria generated from it.

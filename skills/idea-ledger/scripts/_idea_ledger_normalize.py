@@ -88,6 +88,37 @@ def clean_id_list(value: Any, label: str) -> list[str]:
     return result
 
 
+def normalize_charter(value: Any, *, required: bool = True) -> dict[str, Any] | None:
+    """Normalize the short governing charter used to generate all detailed fields."""
+    if value is None:
+        if required:
+            raise LedgerError("charter（总纲领）不能为空。")
+        return None
+    if not isinstance(value, dict):
+        raise LedgerError("charter（总纲领）必须是对象。")
+    unknown = sorted(set(value) - CHARTER_FIELDS)
+    missing = sorted(CHARTER_FIELDS - set(value))
+    if unknown:
+        raise LedgerError("charter 包含未知字段：" + "、".join(unknown))
+    if missing:
+        raise LedgerError("charter 缺少字段：" + "、".join(missing))
+    return {
+        "goal": clean_string(value.get("goal"), "charter.goal", maximum=240, single_line=True),
+        "actors": clean_string_list(
+            value.get("actors"), "charter.actors", required=True, max_items=5, item_max=80
+        ),
+        "scope": clean_string_list(
+            value.get("scope"), "charter.scope", required=True, max_items=5, item_max=160
+        ),
+        "principles": clean_string_list(
+            value.get("principles"), "charter.principles", required=True, max_items=5, item_max=200
+        ),
+        "non_goals": clean_string_list(
+            value.get("non_goals"), "charter.non_goals", max_items=3, item_max=160
+        ),
+    }
+
+
 def normalize_dependencies(value: Any, label: str = "depends_on") -> list[dict[str, str]]:
     if value is None:
         value = []
@@ -288,6 +319,7 @@ def normalize_payload(payload: dict[str, Any]) -> dict[str, Any]:
     supersedes = clean_id_list(payload.get("supersedes", []), "supersedes")
     result: dict[str, Any] = {
         "title": clean_string(payload.get("title"), "title", maximum=120, single_line=True),
+        "charter": normalize_charter(payload.get("charter"), required=True),
         "goal": clean_string(payload.get("goal"), "goal", maximum=3000),
         "decision": clean_string(payload.get("decision"), "decision", maximum=4000),
         "outcome": clean_string(payload.get("outcome"), "outcome", maximum=3000),

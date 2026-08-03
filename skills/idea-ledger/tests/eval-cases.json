@@ -28,9 +28,32 @@
     "OK",
     "同意"
   ],
+  "governing_charter": {
+    "max_non_empty_lines": 10,
+    "required_fields": [
+      "Goal",
+      "Actors",
+      "Scope",
+      "Principles",
+      "Non-goals"
+    ],
+    "final_question": "总纲领是否正确？",
+    "confirmation_is_not_approval": [
+      "对",
+      "可以",
+      "OK"
+    ]
+  },
   "must_pass": [
     "Material product decisions can invoke the skill without a command token.",
     "Implicit analysis does not initialize or write a ledger.",
+    "A new or changed decision starts with a governing charter of at most 10 non-empty lines before detailed solution or acceptance generation.",
+    "The charter contains only Goal, Actors, Scope, Principles, Non-goals, and the alignment question.",
+    "The AI generates the detailed solution and observable acceptance criteria from the confirmed charter, never the reverse.",
+    "Charter confirmation does not accept a Ledger record.",
+    "Full decision detail is shown only on request or when a material non-compatible conflict requires it.",
+    "The governing charter is persisted before the complete decision and detailed PRD sections.",
+    "A requested PRD is completed as a detailed plan while chat returns the charter reference, path, Ledger action, and next gate by default.",
     "Every new or revised proposal has at least one testable acceptance criterion.",
     "Generic affirmation never accepts a record and unnamed approval is rejected when multiple proposals exist.",
     "Natural-language approval stores the user's original message and resolved record ID.",

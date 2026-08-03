@@ -42,6 +42,17 @@ def searchable_text(meta: dict[str, Any]) -> str:
         *(conflict["conflicts_with"]),
         *(dep["id"] for dep in dependencies),
     ]
+    charter = meta.get("charter")
+    if charter:
+        parts.extend(
+            [
+                charter["goal"],
+                *charter["actors"],
+                *charter["scope"],
+                *charter["principles"],
+                *charter["non_goals"],
+            ]
+        )
     for field in ("rationale", "owner"):
         if meta.get(field):
             parts.append(str(meta[field]))
@@ -134,6 +145,12 @@ def _context_snippet(data: dict[str, Any], *, minimal: bool) -> str:
         f"- 约束：{'；'.join(data['constraints']) if data['constraints'] else '无'}",
         f"- 验收：{'；'.join(data['acceptance_criteria']) if data['acceptance_criteria'] else '无'}",
     ]
+    if data.get("charter"):
+        charter = data["charter"]
+        lines[2:2] = [
+            f"- 总纲领目标：{charter['goal']}",
+            f"- 总纲领原则：{'；'.join(charter['principles'])}",
+        ]
     if data.get("rationale"):
         lines.append(f"- 决策依据：{data['rationale']}")
     if data.get("notes"):
@@ -362,13 +379,31 @@ def create_prd_template(root: Path, idea_id: str) -> Path:
         criteria = "\n".join(f"- [ ] {entry}" for entry in meta["acceptance_criteria"]) or "- [ ] 待补充"
         constraints = "\n".join(f"- {entry}" for entry in meta["constraints"]) or "- 无"
         non_goals = "\n".join(f"- {entry}" for entry in meta.get("non_goals", [])) or "- 待补充"
+        charter = meta.get("charter")
+        charter_section = ""
+        if charter:
+            charter_section = """## 总纲领（管理员与操作者先看）
+- 说明：详细方案与验收标准必须遵循此总纲领。
+- 目标：{goal}
+- 角色：{actors}
+- 范围：{scope}
+- 原则：{principles}
+- 不做：{non_goals}
+
+""".format(
+                goal=charter["goal"],
+                actors="、".join(charter["actors"]),
+                scope="；".join(charter["scope"]),
+                principles="；".join(charter["principles"]),
+                non_goals="；".join(charter["non_goals"]) if charter["non_goals"] else "无",
+            )
         text = f"""{prd_metadata_block(prd_meta)}
 
 # PRD：{idea_id}｜{meta['title']}
 
 > 决策基线：`{idea_id}`；摘要：`{prd_meta['idea_digest']}`。本文件不得悄悄改变其目标、决策或预期结果；变化应创建新的 Idea Ledger 记录。
 
-## 1. 背景与问题
+{charter_section}## 1. 背景与问题
 待补充。
 
 ## 2. 决策基线

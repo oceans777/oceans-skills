@@ -17,6 +17,18 @@ def _render_dependency(item: Any) -> str:
     return f"{normalized['id']}（{normalized['mode']}）"
 
 
+def render_charter(charter: dict[str, Any]) -> list[str]:
+    return [
+        "## 总纲领（管理员与操作者先看）",
+        f"- 目标：{charter['goal']}",
+        f"- 角色：{'、'.join(charter['actors'])}",
+        f"- 范围：{'；'.join(charter['scope'])}",
+        f"- 原则：{'；'.join(charter['principles'])}",
+        f"- 不做：{'；'.join(charter['non_goals']) if charter['non_goals'] else '无'}",
+        "",
+    ]
+
+
 def render_record(meta: dict[str, Any]) -> str:
     conflict = meta["conflict"]
     lines = [
@@ -24,13 +36,13 @@ def render_record(meta: dict[str, Any]) -> str:
         "",
         f"# {meta['id']}：{meta['title']}",
         "",
-        "## 目标",
-        meta["goal"],
-        "",
-        "## 决策",
-        meta["decision"],
-        "",
     ]
+    if "charter" in meta:
+        lines.extend(render_charter(meta["charter"]))
+        lines.extend(["## 详细目标", meta["goal"], "", "## 具体方案", meta["decision"], ""])
+    else:
+        # Preserve canonical rendering for legacy records created before v2.3.
+        lines.extend(["## 目标", meta["goal"], "", "## 决策", meta["decision"], ""])
     if "rationale" in meta:
         lines.extend(["## 决策依据", meta.get("rationale") or "未单独记录。", ""])
     lines.extend(
@@ -114,6 +126,10 @@ def conflict_is_approvable(meta: dict[str, Any]) -> tuple[bool, str]:
 
 def _validate_optional_record_fields(meta: dict[str, Any], errors: list[str]) -> None:
     try:
+        if "charter" in meta:
+            normalized_charter = normalize_charter(meta.get("charter"), required=False)
+            if meta.get("charter") != normalized_charter:
+                errors.append("charter 未规范化")
         if "rationale" in meta:
             normalized = clean_optional_string(meta.get("rationale"), "rationale", maximum=4000)
             if meta.get("rationale") != normalized:

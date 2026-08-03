@@ -1,31 +1,27 @@
 ---
 name: idea-ledger
-description: Explicitly review, record, approve, reject, supersede, or audit a material product decision in the current repository. Use only when the user invokes $idea-ledger or /idea-ledger. Do not trigger for ordinary coding, explanation, summarization, translation, bug fixing, generic planning, or a natural-language mention of Idea Ledger without the explicit skill token. Never initialize Git, change Git configuration, commit, stage, reset, restore, clean, or revert user work.
-license: MIT. See LICENSE.
-compatibility: Requires Python 3.10 or later. Git is optional and is used only by strict CI checks.
-disable-model-invocation: true
-argument-hint: "[new|review|approve|reject|status|show|audit|prd] [topic or IDEA-id]"
-metadata:
-  author: oceans777
-  version: "2.1.0"
-  invocation-policy: explicit-only
+description: Automatically review and manage material product decisions in the current repository. Use when a user proposes, changes, compares, records, approves, rejects, supersedes, or audits a decision affecting user-visible behavior, product scope, data, security, privacy, permissions, pricing, operational policy, or architecture. Implicit use may analyze and draft without persistence; write or finalize only when the user's natural-language intent is unambiguous. Do not trigger for ordinary coding, explanation, summarization, translation, routine bug fixing, formatting, or generic planning.
 ---
 
 # Idea Ledger
 
-Manage durable **product decisions**, not every user utterance. Keep semantic judgment in the model and deterministic state, graph, rendering, and CI validation in the bundled scripts.
+Manage durable **product decisions**, not every user utterance. Let the model perform materiality and intent judgment while the bundled scripts enforce deterministic state, graph, rendering, evidence, and CI invariants.
 
 ## Non-negotiable safety boundary
 
-1. Run only after `$idea-ledger` or `/idea-ledger` is explicitly invoked.
-2. Make only project-local ledger or PRD writes required by the requested action.
-3. Never run `git init`, alter `core.hooksPath`, install hooks, stage, commit, reset, restore, clean, or revert unless the user separately requests that Git action.
-4. Never classify pre-existing working-tree changes as yours and never tell the user to discard them.
-5. Do not claim lexical retrieval, deterministic checks, or CI prove semantic correctness. Cite clauses, IDs, assumptions, and confidence.
-6. `accepted` and `rejected` records are immutable. A changed decision becomes a new proposal linked with `supersedes`.
-7. Generic replies such as “可以”, “继续”, “OK”, or “yes” are not approval. Approval must name the record exactly: `批准 IDEA-0001` or `APPROVE IDEA-0001`.
-8. Approval metadata is an audit trace, not authentication. The CLI stores `actor_verified: false`; never claim it proves identity or authorization.
-9. Do not report a write as successful until `validate` succeeds.
+1. Invoke automatically when the request matches the materiality boundary; `$idea-ledger` and `/idea-ledger` remain optional manual routes.
+2. Keep implicit discovery read-only. Analyze, retrieve, compare, and draft in chat without initializing a ledger or writing files.
+3. Create or revise a proposal only when the user clearly asks to record, save, preserve, or update the decision. Natural language is sufficient; never require a command token.
+4. Accept or reject only when the current user message unambiguously finalizes exactly one identified proposal. Pass that message without paraphrasing as evidence; never synthesize approval language. The CLI may normalize whitespace for canonical storage.
+5. Treat generic replies such as “可以”, “继续”, “OK”, “yes”, or “同意” as ambiguous. If several proposals are active and the message does not identify one, ask for disambiguation.
+6. Require at least one observable, falsifiable acceptance criterion before creating, revising, or accepting a proposal.
+7. Make only project-local ledger or PRD writes required by the requested action.
+8. Never run `git init`, alter `core.hooksPath`, install hooks, stage, commit, reset, restore, clean, or revert unless the user separately requests that Git action.
+9. Never classify pre-existing working-tree changes as yours and never tell the user to discard them.
+10. Do not claim lexical retrieval, deterministic checks, or CI prove semantic correctness. Cite clauses, IDs, assumptions, and confidence.
+11. `accepted` and `rejected` records are immutable. A changed decision becomes a new proposal linked with `supersedes`.
+12. Approval metadata is an audit trace, not authentication. The CLI stores `actor_verified: false`; never claim it proves identity or authorization.
+13. Do not report a write as successful until `validate` succeeds.
 
 ## Locate the script
 
@@ -78,9 +74,11 @@ Restate the proposal as:
 
 If the user asked only for a review, do not initialize or write files.
 
+Every proposal must include at least one acceptance criterion. Write each criterion so a future reviewer can observe pass or fail from behavior, a metric, a state transition, or durable evidence. Prefer a trigger/action/outcome shape. Reject vague criteria such as “works well”, “is user friendly”, or “improves performance” without a threshold or observable result.
+
 ### 3. Retrieve candidates
 
-When the user explicitly asked to record and the ledger is absent:
+When the user's natural-language request clearly asks to persist the decision and the ledger is absent:
 
 ```bash
 python3 "$LEDGER" init --root .
@@ -159,13 +157,21 @@ The CLI constructs the full candidate ledger state, validates relationships and 
 
 ### 7. Approve or reject
 
-Approve only when the current user message contains the exact record-specific phrase:
+The exact legacy phrase remains valid:
 
 ```bash
 python3 "$LEDGER" accept --root . --id IDEA-0001 --evidence "批准 IDEA-0001" --json
 ```
 
-Do not manufacture approval evidence from context.
+For an unambiguous natural-language approval of exactly one proposal, pass the current user message without paraphrasing:
+
+```bash
+python3 "$LEDGER" accept --root . --id IDEA-0001 \
+  --mode natural-language-intent \
+  --evidence "就按刚才这个方案执行" --json
+```
+
+Do not paraphrase, concatenate, or manufacture approval evidence. The CLI rejects generic confirmations and rejects an unnamed target when multiple proposals exist.
 
 Reject only on an explicit rejection instruction:
 
@@ -198,7 +204,7 @@ For a decision review, return four sections:
 1. **Decision draft** — goal, decision, rationale, expected outcome, scope, non-goals, constraints, and acceptance criteria.
 2. **Conflict assessment** — compatibility, disposition, reviewed/conflicting IDs, clause evidence, mitigation, and confidence.
 3. **Ledger action** — `not written`, `proposed IDEA-…`, `accepted`, or `rejected`.
-4. **Next gate** — the exact approval phrase when approval is still required.
+4. **Next gate** — the unresolved evidence, decision, or natural-language confirmation needed before the next state change.
 
 State assumptions instead of inventing facts. Ask a question only when missing information would materially change the record or classification.
 

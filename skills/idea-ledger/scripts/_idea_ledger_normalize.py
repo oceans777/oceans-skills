@@ -242,7 +242,7 @@ def normalize_conflict(value: Any, *, supersedes: Sequence[str] = ()) -> dict[st
 
 
 def normalize_conflict_input(value: Any, *, supersedes: Sequence[str] = ()) -> dict[str, Any]:
-    """Normalize old or new input to the v2.1 two-axis representation."""
+    """Normalize old or new input to the current two-axis representation."""
     return normalize_conflict(value, supersedes=supersedes)
 
 
@@ -295,7 +295,11 @@ def normalize_payload(payload: dict[str, Any]) -> dict[str, Any]:
         "tags": clean_string_list(payload.get("tags", []), "tags", max_items=30, item_max=80),
         "constraints": clean_string_list(payload.get("constraints", []), "constraints", max_items=30, item_max=500),
         "acceptance_criteria": clean_string_list(
-            payload.get("acceptance_criteria", []), "acceptance_criteria", max_items=30, item_max=500
+            payload.get("acceptance_criteria", []),
+            "acceptance_criteria",
+            required=True,
+            max_items=30,
+            item_max=500,
         ),
         "conflict": normalize_conflict_input(payload.get("conflict"), supersedes=supersedes),
         "supersedes": supersedes,

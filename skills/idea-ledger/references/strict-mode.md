@@ -1,4 +1,4 @@
-# Optional strict mode — v2.1
+# Optional strict mode — v2.2
 
 The default skill is advisory and project-local. Teams that need merge-time policy can run the deterministic CLI in CI. Do not install global lifecycle hooks and do not treat agent tool hooks as a security boundary.
 

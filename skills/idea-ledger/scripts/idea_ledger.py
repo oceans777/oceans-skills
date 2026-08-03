@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Idea Ledger v2.1 CLI: explicit routing over deterministic core and optional CI checks."""
+"""Idea Ledger v2.2 CLI: intent-aware routing over deterministic core and optional CI checks."""
 from __future__ import annotations
 
 import argparse
@@ -65,7 +65,7 @@ def add_root(parser: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Idea Ledger v2.1：显式、项目内、可审计的产品决策记录")
+    parser = argparse.ArgumentParser(description="Idea Ledger v2.2：意图感知、项目内、可审计的产品决策记录")
     parser.add_argument("--version", action="version", version=VERSION)
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -81,10 +81,16 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--id", required=True)
     p.add_argument("--input", required=True, help="JSON 文件路径，或 - 从 stdin 读取")
 
-    p = sub.add_parser("accept", help="用精确批准语句接受 proposed 记录")
+    p = sub.add_parser("accept", help="用精确短语或已消歧的自然语言意图接受 proposed 记录")
     add_root(p)
     p.add_argument("--id", required=True)
-    p.add_argument("--evidence", required=True, help="精确语句：批准 IDEA-0001 / APPROVE IDEA-0001")
+    p.add_argument("--evidence", required=True, help="当前用户消息原文；不得由代理改写或伪造")
+    p.add_argument(
+        "--mode",
+        choices=("auto", "explicit-phrase", "natural-language-intent"),
+        default="auto",
+        help="固定短语自动识别；其他明确批准需 natural-language-intent",
+    )
 
     p = sub.add_parser("reject", help="拒绝 proposed 记录")
     add_root(p)
@@ -171,7 +177,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         elif args.command == "revise":
             emit(revise_record(root, args.id, load_payload(args.input)), as_json=args.json)
         elif args.command == "accept":
-            emit(accept_record(root, args.id, args.evidence), as_json=args.json)
+            emit(
+                accept_record(root, args.id, args.evidence, approval_mode=args.mode.replace("-", "_")),
+                as_json=args.json,
+            )
         elif args.command == "reject":
             emit(reject_record(root, args.id, args.reason), as_json=args.json)
         elif args.command == "show":

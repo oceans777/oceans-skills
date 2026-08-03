@@ -6,14 +6,14 @@ Run from the package root:
 python3 -m unittest discover -s tests -p "test_*.py" -v
 ```
 
-The deterministic suite contains **51 tests**. Test subprocesses have bounded timeouts; Git operations inside the optional CI module also use bounded timeouts and disabled interactive prompts.
+The deterministic suite contains **55 tests**. Test subprocesses have bounded timeouts; Git operations inside the optional CI module also use bounded timeouts and disabled interactive prompts.
 
 Coverage includes:
 
 - no unintended Git or global side effects;
-- explicit-only plugin metadata;
+- implicit material-decision routing metadata and read-only discovery boundaries;
 - configuration path topology and symlink/lock hardening;
-- exact approval and terminal immutability;
+- acceptance-criteria enforcement, exact and natural-language approval evidence, ambiguity rejection, and terminal immutability;
 - candidate global-graph validation before disk mutation;
 - two-axis conflict rules;
 - `lineage` and `exact` dependencies, cycles, supersession, and legacy v2.0 input;

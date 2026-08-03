@@ -1,4 +1,4 @@
-# Workflow and review rubric — v2.1
+# Workflow and review rubric — v2.2
 
 ## Purpose
 
@@ -33,10 +33,17 @@ Routine refactors, formatting, explanations, summaries, translations, and implem
 5. Record all reviewed IDs; put only genuine conflicts in `conflicts_with`.
 6. Select compatibility, disposition, mitigation, and confidence independently.
 7. Express dependencies as `lineage` or `exact` deliberately.
-8. Save only when the user explicitly asked to record the decision.
-9. Require record-specific approval before acceptance.
-10. Use a new record for any later material change.
-11. After every write, run `validate` and report success only when it passes.
+8. Keep automatic discovery read-only; save only when the user's natural-language intent clearly requests persistence.
+9. Require at least one observable, falsifiable acceptance criterion before any proposal write or acceptance.
+10. Accept natural-language approval only when the current message unambiguously finalizes exactly one proposal; pass it without paraphrasing and allow only canonical whitespace normalization.
+11. Use a new record for any later material change.
+12. After every write, run `validate` and report success only when it passes.
+
+## Acceptance criteria gate
+
+Write criteria as observable pass/fail conditions. Prefer trigger/action/outcome, measurable thresholds, state transitions, or named durable evidence. Do not accept “works well”, “is intuitive”, “improves performance”, or similar claims unless the record also states how success is observed.
+
+New and revised proposals with an empty `acceptance_criteria` array are rejected. A legacy proposed record with no criteria remains readable but cannot be accepted until it is revised.
 
 ## Compatibility versus disposition
 
@@ -142,6 +149,8 @@ If candidate validation fails, the target record is not written. The filesystem 
 
 `audit` emits complete normalized records in pages, including effective state, normalized conflicts, normalized/resolved dependencies, dependency errors, and record digest. A full conflict audit requires reading every page and still remains a semantic review, not a mathematical proof.
 
-## Approval and identity boundary
+## Approval, intent, and identity boundary
 
-An exact record-specific phrase prevents accidental generic confirmation, but it is not an identity or authorization mechanism. The ledger records `actor_verified: false`; rely on the host platform, repository permissions, code review, and organizational controls for who may approve.
+An exact record-specific phrase remains valid, but users do not need to know it. The model may resolve a natural-language approval only when the current message clearly finalizes one proposal. Generic confirmations remain invalid; if several proposals are active, an unnamed target must be disambiguated.
+
+Natural-language approval stores the original message and resolved record ID. This is an audit trace, not an identity or authorization mechanism. The ledger records `actor_verified: false`; rely on the host platform, repository permissions, code review, and organizational controls for who may approve.

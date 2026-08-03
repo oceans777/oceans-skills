@@ -1,6 +1,6 @@
 interface:
   display_name: "Idea Ledger"
-  short_description: "显式审查与记录关键产品决策，并在写入前验证完整关系图"
-  default_prompt: "使用 $idea-ledger new 审查并记录这项产品决策；不要执行任何 Git 操作。"
+  short_description: "自动识别并审查关键产品决策，安全记录自然语言意图"
+  default_prompt: "使用 $idea-ledger 审查这项产品决策，补齐可验证的验收标准；只有我的自然语言意图明确时才写入。"
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true

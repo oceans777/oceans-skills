@@ -1,6 +1,6 @@
-# Migration from v1 to v2.1
+# Migration from v1 to v2.2
 
-Do not run v2.1 directly over a v1 `.idea-ledger/config.json`; v2.1 deliberately rejects schema 1.
+Do not run v2.2 directly over a v1 `.idea-ledger/config.json`; v2.2 deliberately rejects schema 1.
 
 ## Why migration is not in-place
 
@@ -13,8 +13,8 @@ V1 combines records, automatic lifecycle hooks, Git hook installation, prompt sn
 3. Restore the repository's previous `core.hooksPath` deliberately. Verify all original hook types, not only `pre-commit` and `commit-msg`.
 4. Keep `docs/idea-ledger/ideas/` as a read-only archive.
 5. Move the v1 `.idea-ledger/` directory aside, for example to `.idea-ledger-v1-archive/`.
-6. Run v2.1 `init`.
-7. For each v1 record worth retaining, create a v2.1 proposal with:
+6. Run v2.2 `init`.
+7. For each v1 record worth retaining, create a v2.2 proposal with:
    - `goal` from 目标;
    - `decision` from 方案;
    - `outcome` from 落点;

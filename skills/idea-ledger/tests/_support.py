@@ -48,7 +48,7 @@ def run(
 
 class LedgerCase(unittest.TestCase):
     def setUp(self) -> None:
-        self.temp = tempfile.TemporaryDirectory(prefix="idea-ledger-v21-test-")
+        self.temp = tempfile.TemporaryDirectory(prefix="idea-ledger-v22-test-")
         self.root = Path(self.temp.name)
 
     def tearDown(self) -> None:

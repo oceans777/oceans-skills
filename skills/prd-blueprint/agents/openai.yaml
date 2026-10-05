@@ -1,0 +1,6 @@
+interface:
+  display_name: "需求文档总纲"
+  short_description: "明确要求写需求文档时，生成三项总纲和逐项对应的完整文档"
+  default_prompt: "使用 $prd-blueprint（需求文档生成技能），把当前可访问讨论整理成三项总纲和完整需求文档，在对话中原样展示总纲；先检查遗漏和范围偏移。"
+policy:
+  allow_implicit_invocation: true

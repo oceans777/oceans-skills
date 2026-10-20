@@ -21,7 +21,7 @@ def contract_errors(root):
         if not (root / link).is_file():
             errors.append('missing-reference:' + link)
     ids = re.findall(r'^## ([A-Z]+-\d{2}) ', checks, re.M)
-    if len(ids) != 16 or len(ids) != len(set(ids)):
+    if not ids or len(ids) != len(set(ids)):
         errors.append('check-ids')
     for section in re.split(r'^## ', checks, flags=re.M)[1:]:
         for field in ('适用：', '来源/证据状态：', '症状：', '检查：', '修复方向：', '回归：'):
@@ -63,6 +63,18 @@ class ContractTests(unittest.TestCase):
         for case in cases:
             self.assertEqual(case['execution_status'], 'not-run')
             self.assertTrue(case['prompt'] and case['expected'] and case['must_not'])
+
+    def test_new_well_formed_check_is_accepted(self):
+        import shutil
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / 'skill'
+            shutil.copytree(ROOT, target)
+            file = target / 'references/checks.md'
+            text = file.read_text(encoding='utf-8')
+            example = re.split(r'^## ', text, flags=re.M)[1]
+            file.write_text(text + '\n## ' + example.replace('PAY-01', 'NEW-01', 1), encoding='utf-8')
+            self.assertEqual(contract_errors(target), [])
 
     def test_mutation_duplicate_check_rejected(self):
         self.check_mutation('references/checks.md', '## PAY-01 ', '## JOB-01 ', 'check-ids')

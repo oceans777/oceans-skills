@@ -1,7 +1,13 @@
 name: AI generation site skill contracts
 on:
   push:
+    paths:
+      - "skills/audit-ai-generation-site/**"
+      - ".github/workflows/audit-ai-generation-site.yml"
   pull_request:
+    paths:
+      - "skills/audit-ai-generation-site/**"
+      - ".github/workflows/audit-ai-generation-site.yml"
 permissions:
   contents: read
 jobs:

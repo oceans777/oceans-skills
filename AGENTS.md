@@ -5,6 +5,9 @@ This repository stores first-party oceans777 skills.
 ## Rules
 
 - Place each skill under `skills/<skill-name>/`.
+- New and extracted skills live in `https://github.com/oceans777/<skill-name>`. Link them here with a submodule. Do not commit a second full copy.
+- `skills/git-upstream-sync-guard/` is a deprecated stub for `fork-skill`. Do not revive the old topology there.
+- Do not add `skills/audit-ai-generation-site/` back into this tree while the hub catalog status is `pending-review`.
 - Use lowercase letters, digits, and hyphens for skill names.
 - Each skill must include `SKILL.md`.
 - `SKILL.md` frontmatter must include `name` and `description`.

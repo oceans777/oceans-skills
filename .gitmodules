@@ -10,9 +10,9 @@
 [submodule "skills/idea-ledger"]
 	path = skills/idea-ledger
 	url = https://github.com/oceans777/idea-ledger.git
-[submodule "skills/prd-blueprint"]
-	path = skills/prd-blueprint
-	url = https://github.com/oceans777/prd-blueprint.git
 [submodule "skills/fork-skill"]
 	path = skills/fork-skill
 	url = https://github.com/oceans777/fork-skill.git
+[submodule "skills/prd-skill"]
+	path = skills/prd-skill
+	url = https://github.com/oceans777/prd-skill.git

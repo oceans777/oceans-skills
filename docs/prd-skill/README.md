@@ -1,8 +1,8 @@
 # 需求文档生成技能
 
-规范副本已迁到 [oceans777/prd-blueprint](https://github.com/oceans777/prd-blueprint)。本目录仍供本聚合仓库的结构检查使用。
+规范副本已迁到 [oceans777/prd-skill](https://github.com/oceans777/prd-skill)。本目录仍供本聚合仓库的结构检查使用。`prd-blueprint` 只保留弃用说明。
 
-技能名称：`prd-blueprint`（需求文档生成技能），版本：0.1。
+技能名称：`prd-skill`（需求文档生成技能），版本：0.1。
 
 用户明确要求撰写、整理成或更新需求文档时，交付独立三项总纲和完整需求文档，并在对话中原样展示总纲。普通讨论、只读审查和仅要求开发不触发文档生成。
 
@@ -11,8 +11,8 @@
 - [总纲](总纲.md)：一句话目的、功能清单、对应验收标准。
 - [完整需求文档](PRD.md)：首版制作的完整需求与来源、边界、审查记录。
 - [项目规则片段](AGENTS-规则片段.md)：需经授权合入既有项目规则，不自动覆盖。
-- [技能正文](../../skills/prd-blueprint/SKILL.md)：实际安装内容。
-- [宿主行为用例](../../skills/prd-blueprint/tests/触发与行为用例.md)：实际宿主触发测试的输入和预期，不代表已经运行通过。
+- [技能正文](../../skills/prd-skill/SKILL.md)：实际安装内容。
+- [宿主行为用例](../../skills/prd-skill/tests/触发与行为用例.md)：实际宿主触发测试的输入和预期，不代表已经运行通过。
 
 完整需求文档保留首版制作时的状态记录；仓库发布、安装与运行的最新事实以本次合并请求、自动检查和实际运行证据为准，不倒改历史记录。
 
@@ -33,8 +33,8 @@
 在本仓库根目录运行：
 
 ```sh
-python -m unittest discover -s skills/prd-blueprint/tests -p 'test_*.py' -v
-python skills/prd-blueprint/scripts/check_prd.py --outline docs/prd-blueprint/总纲.md --prd docs/prd-blueprint/PRD.md
+python -m unittest discover -s skills/prd-skill/tests -p 'test_*.py' -v
+python skills/prd-skill/scripts/check_prd.py --outline docs/prd-skill/总纲.md --prd docs/prd-skill/PRD.md
 ```
 
 `python`（解释器命令）使用本机实际可用的解释器。测试只依赖标准库；20 项结构测试不替代真实宿主触发、语义保真和业务产品验收。

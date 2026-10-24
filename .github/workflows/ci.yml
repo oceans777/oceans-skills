@@ -112,8 +112,8 @@ jobs:
           path: idea-ledger-test-output.txt
           if-no-files-found: error
 
-  prd-blueprint-tests:
-    name: PRD blueprint (${{ matrix.os }})
+  prd-skill-tests:
+    name: PRD skill (${{ matrix.os }})
     timeout-minutes: 10
     strategy:
       fail-fast: false
@@ -129,6 +129,6 @@ jobs:
           submodules: recursive
           persist-credentials: false
       - name: Run PRD structure tests
-        run: python -m unittest discover -s skills/prd-blueprint/tests -p "test_*.py" -v
+        run: python -m unittest discover -s skills/prd-skill/tests -p "test_*.py" -v
       - name: Verify accepted outline and detailed document
-        run: python skills/prd-blueprint/scripts/check_prd.py --outline docs/prd-blueprint/总纲.md --prd docs/prd-blueprint/PRD.md
+        run: python skills/prd-skill/scripts/check_prd.py --outline docs/prd-skill/总纲.md --prd docs/prd-skill/PRD.md

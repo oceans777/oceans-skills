@@ -12,9 +12,11 @@ Each first-party skill now has its own repository. A directory under `skills/<sk
 | `discuz-x5` | https://github.com/oceans777/discuz-x5 |
 | `experience-triage` | https://github.com/oceans777/experience-triage |
 | `idea-ledger` | https://github.com/oceans777/idea-ledger |
-| `prd-blueprint` | https://github.com/oceans777/prd-blueprint |
+| `prd-skill` | https://github.com/oceans777/prd-skill |
 
 `skills/git-upstream-sync-guard/` is a deprecated stub. That skill was renamed to `fork-skill`. New forks use a fast-forward mirror branch `upstream/<default>`, active work on `dev`, and release on `main` (formerly `release`).
+
+`skills/prd-blueprint/` is a deprecated stub. That skill was renamed to `prd-skill`. The outline-first flow is unchanged.
 
 `audit-ai-generation-site` is not linked as a submodule here. The hub catalog still marks it pending review, and the hub rejects a pending skill that also exists in this package tree. Its source repository is linked above.
 
@@ -28,6 +30,6 @@ Each skill must include `SKILL.md`. Optional supporting folders are `scripts/`, 
 
 ## 需求文档生成技能
 
-`prd-blueprint`（需求文档生成技能）：明确要求写需求文档时，生成三项总纲和完整详细文档，并逐项核对功能与验收。
+`prd-skill`（需求文档生成技能）：明确要求写需求文档时，生成三项总纲和完整详细文档，并逐项核对功能与验收。
 
-[使用说明与验收依据](docs/prd-blueprint/README.md)。规范副本在 [oceans777/prd-blueprint](https://github.com/oceans777/prd-blueprint)。安装通过 [统一入口](https://github.com/oceans777/skills)，生效状态以入口目录为准。
+[使用说明与验收依据](docs/prd-skill/README.md)。规范副本在 [oceans777/prd-skill](https://github.com/oceans777/prd-skill)。安装通过 [统一入口](https://github.com/oceans777/skills)，生效状态以入口目录为准。

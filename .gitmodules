@@ -1,0 +1,18 @@
+[submodule "skills/agent-operating-system"]
+	path = skills/agent-operating-system
+	url = https://github.com/oceans777/agent-operating-system.git
+[submodule "skills/discuz-x5"]
+	path = skills/discuz-x5
+	url = https://github.com/oceans777/discuz-x5.git
+[submodule "skills/experience-triage"]
+	path = skills/experience-triage
+	url = https://github.com/oceans777/experience-triage.git
+[submodule "skills/idea-ledger"]
+	path = skills/idea-ledger
+	url = https://github.com/oceans777/idea-ledger.git
+[submodule "skills/prd-blueprint"]
+	path = skills/prd-blueprint
+	url = https://github.com/oceans777/prd-blueprint.git
+[submodule "skills/fork-skill"]
+	path = skills/fork-skill
+	url = https://github.com/oceans777/fork-skill.git

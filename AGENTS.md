@@ -1,11 +1,11 @@
 # AGENTS.md
 
-This repository stores first-party oceans777 skills.
+This repository is retired. Do not add skills, submodules, or package copies here. New work belongs in `https://github.com/oceans777/<skill-id>`. Install and catalog changes belong in `https://github.com/oceans777/skills`.
 
-## Rules
+## Historical rules
 
 - Place each skill under `skills/<skill-name>/`.
-- New and extracted skills live in `https://github.com/oceans777/<skill-name>`. Link them here with a submodule. Do not commit a second full copy.
+- New and extracted skills live in `https://github.com/oceans777/<skill-name>`. This aggregate no longer links them for install.
 - `skills/git-upstream-sync-guard/` is a deprecated stub for `fork-skill`. Do not revive the old topology there.
 - `skills/prd-blueprint/` is a deprecated stub for `prd-skill`. Do not revive the old skill id there.
 - Do not add `skills/audit-ai-generation-site/` back into this tree while the hub catalog status is `pending-review`.
